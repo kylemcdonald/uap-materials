@@ -1,0 +1,21 @@
+{
+  "name": "pos-to-xyz-viewer",
+  "version": "1.0.0",
+  "description": "3D viewer for POS to XYZ converted files",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["3D", "viewer", "POS", "XYZ", "APT"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.162.0"
+  },
+  "devDependencies": {
+    "vite": "^5.1.4",
+    "@vitejs/plugin-legacy": "^5.3.0"
+  }
+}
