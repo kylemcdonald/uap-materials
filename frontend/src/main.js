@@ -245,8 +245,9 @@ function createHistogram() {
         .domain([0, 120])
         .range([0, width]);
 
+    // Use logarithmic scale for y-axis
     const y = d3.scaleLog()
-        .domain([1, d3.max(bins, d => d.length)])
+        .domain([1, d3.max(bins, d => d.length) || 1]) // Use 1 as minimum to avoid log(0)
         .range([height, 0]);
 
     // Add bars
@@ -278,15 +279,47 @@ function createHistogram() {
         .style('pointer-events', 'none')
         .attr('id', 'rangeHighlight');
 
-    // Do not add axes
-    // svg.append('g')
-    //     .attr('transform', `translate(0,${height})`)
-    //     .call(d3.axisBottom(x).ticks(5))
-    //     .style('font-size', '8px');
+    // Add axes with numbers
+    svg.append('g')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x).ticks(5))
+        .style('font-size', '10px')
+        .style('color', 'white');
 
-    // svg.append('g')
-    //     .call(d3.axisLeft(y).ticks(5))
-    //     .style('font-size', '8px');
+    svg.append('g')
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".1e")))
+        .style('font-size', '10px')
+        .style('color', 'white');
+        
+    // Add brush for area selection
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on("end", brushed);
+        
+    svg.append("g")
+        .attr("class", "brush")
+        .call(brush);
+        
+    // Brush event handler
+    function brushed(event) {
+        if (!event.selection) return; // Ignore brush-by-zoom
+        
+        // Convert the brush selection from pixels to data values
+        const [x0, x1] = event.selection.map(x.invert);
+        
+        // Update the threshold sliders
+        const minSlider = document.querySelector('input[type="range"]');
+        const rangeSlider = document.querySelectorAll('input[type="range"]')[1];
+        
+        // Set min threshold to the start of the selection
+        minSlider.value = Math.max(0, Math.floor(x0));
+        minSlider.dispatchEvent(new Event('input'));
+        
+        // Set range to the width of the selection
+        const selectionWidth = Math.ceil(x1) - Math.floor(x0);
+        rangeSlider.value = Math.min(200, selectionWidth);
+        rangeSlider.dispatchEvent(new Event('input'));
+    }
 }
 
 // Create threshold slider
@@ -456,7 +489,11 @@ function updateHistogramHighlight() {
     
     highlight
         .attr('x', x(minValue))
-        .attr('width', x(minValue + rangeValue) - x(minValue));
+        .attr('width', x(minValue + rangeValue) - x(minValue))
+        .attr('height', svg.node().getBoundingClientRect().height);
+        
+    // Make sure the brush doesn't interfere with our highlight
+    svg.select('.brush').raise();
 }
 
 // Create point cloud from POS data
@@ -599,8 +636,8 @@ function createIndexRangeSlider() {
     const indexRangeSlider = document.createElement('input');
     indexRangeSlider.type = 'range';
     indexRangeSlider.min = '1000';
-    indexRangeSlider.max = '1000000'; // This will be updated when data is loaded
-    indexRangeSlider.value = '1000000'; // This will be updated when data is loaded
+    indexRangeSlider.max = '1000000';
+    indexRangeSlider.value = '1000000';
     indexRangeSlider.step = '1000';
     indexRangeSlider.style.width = '100%';
     indexControlsDiv.appendChild(indexRangeSlider);
@@ -674,7 +711,7 @@ function createIndexRangeSlider() {
         // Update min index slider max
         minIndexSlider.max = totalPoints.toString();
         
-        // Update index range slider max to use total points instead of hardcoded value
+        // Update index range slider max
         const maxRange = totalPoints;
         indexRangeSlider.max = maxRange.toString();
         
@@ -717,4 +754,4 @@ function updatePointCloudIndexRange() {
 console.log('Initializing Three.js scene');
 init();
 console.log('Starting animation loop');
-animate(); 
+animate();
