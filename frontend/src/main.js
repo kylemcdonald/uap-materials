@@ -211,6 +211,42 @@ function createHistogram() {
         .style('background', 'rgba(0,0,0, 0.25)')
         .style('border-radius', '5px')
         .style('z-index', '1000');
+        
+    // Add filter controls to histogram
+    const filterControls = histogramDiv.append('div')
+        .attr('id', 'histogramControls')
+        .style('position', 'absolute')
+        .style('top', '5px')
+        .style('right', '10px')
+        .style('z-index', '1001')
+        .style('display', 'flex')
+        .style('gap', '10px');
+    
+    // Add scale toggle button
+    filterControls.append('button')
+        .attr('id', 'scaleToggle')
+        .text('Toggle Scale (Log/Linear)')
+        .style('padding', '3px 8px')
+        .style('border-radius', '3px')
+        .style('background', 'rgba(255,255,255,0.8)')
+        .style('border', '1px solid #ccc')
+        .style('cursor', 'pointer')
+        .style('font-size', '12px')
+        .on('click', toggleHistogramScale);
+    
+    // Add zoom reset button
+    filterControls.append('button')
+        .attr('id', 'resetZoom')
+        .text('Reset Zoom')
+        .style('padding', '3px 8px')
+        .style('border-radius', '3px')
+        .style('background', 'rgba(255,255,255,0.8)')
+        .style('border', '1px solid #ccc')
+        .style('cursor', 'pointer')
+        .style('font-size', '12px')
+        .on('click', resetHistogramZoom);
+        
+    // We no longer need the threshold toggle button as we'll use double-click instead
 
     // Create SVG with proper dimensions and padding
     const margin = {top: 10, right: 10, bottom: 30, left: 40};
@@ -221,7 +257,11 @@ function createHistogram() {
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom)
         .append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+        .attr('transform', `translate(${margin.left},${margin.top})`)
+        .attr('id', 'histogramGroup');
+        
+    // Store current scale type in a data attribute
+    svg.attr('data-scale', 'log');
 
     // Check if we have data to display
     if (globalChargeMassRatios.length === 0) {
@@ -300,6 +340,77 @@ function createHistogram() {
         .attr("class", "brush")
         .call(brush);
         
+    // Add global threshold line (horizontal) - initially hidden
+    const thresholdLine = svg.append('line')
+        .attr('id', 'globalThresholdLine')
+        .attr('x1', 0)
+        .attr('y1', height) // Start at the bottom
+        .attr('x2', width)
+        .attr('y2', height)
+        .style('stroke', 'red')
+        .style('stroke-width', 2)
+        .style('stroke-dasharray', '5,5')
+        .style('cursor', 'ns-resize') // Vertical cursor for horizontal line
+        .style('display', 'none'); // Initially hidden
+        
+    // Add threshold value label
+    const thresholdLabel = svg.append('text')
+        .attr('id', 'thresholdLabel')
+        .attr('x', 10) // Position at left side
+        .attr('y', height - 5)
+        .attr('text-anchor', 'start')
+        .style('fill', 'red')
+        .style('font-size', '12px')
+        .style('font-weight', 'bold')
+        .style('display', 'none') // Initially hidden
+        .text('Threshold: 0');
+        
+    // Add double-click event listener to create/show threshold line
+    svg.on('dblclick', function(event) {
+        // Get the y position of the click
+        const [_, yPos] = d3.pointer(event);
+        
+        // Get the current y scale
+        const currentScale = svg.attr('data-scale');
+        const maxBinHeight = d3.max(svg.selectAll('rect').data(), d => d.length) || 1;
+        
+        let y;
+        if (currentScale === 'log') {
+            y = d3.scaleLog()
+                .domain([1, maxBinHeight])
+                .range([height, 0]);
+        } else {
+            y = d3.scaleLinear()
+                .domain([0, maxBinHeight])
+                .range([height, 0]);
+        }
+        
+        // Convert y position to threshold value
+        const thresholdValue = Math.round(y.invert(yPos));
+        
+        // Update the global threshold slider
+        const globalThresholdSlider = document.querySelector('#controls input[type="range"]');
+        globalThresholdSlider.value = thresholdValue;
+        globalThresholdSlider.dispatchEvent(new Event('input'));
+        
+        // Show and update the threshold line
+        thresholdLine.style('display', null);
+        thresholdLabel.style('display', null);
+        
+        // Update the threshold line position
+        thresholdLine
+            .attr('y1', yPos)
+            .attr('y2', yPos);
+            
+        // Update the threshold label
+        thresholdLabel
+            .attr('y', yPos - 5)
+            .text(`Threshold: ${thresholdValue}`);
+            
+        // Filter the histogram bins
+        filterHistogramByThreshold(thresholdValue);
+    });
+        
     // Brush event handler
     function brushed(event) {
         if (!event.selection) return; // Ignore brush-by-zoom
@@ -335,6 +446,34 @@ function createThresholdSlider() {
     controlsDiv.style.borderRadius = '5px';
     controlsDiv.style.border = '1px solid #ccc';
     document.body.appendChild(controlsDiv);
+    
+    // Create global threshold label
+    const globalThresholdLabel = document.createElement('label');
+    globalThresholdLabel.textContent = 'Global Threshold: ';
+    globalThresholdLabel.style.display = 'block';
+    globalThresholdLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(globalThresholdLabel);
+    
+    // Create global threshold slider
+    const globalThresholdSlider = document.createElement('input');
+    globalThresholdSlider.type = 'range';
+    globalThresholdSlider.min = '0';
+    globalThresholdSlider.max = '100000';
+    globalThresholdSlider.value = '0';
+    globalThresholdSlider.step = '1';
+    globalThresholdSlider.style.width = '200px';
+    controlsDiv.appendChild(globalThresholdSlider);
+    
+    // Create global threshold value display
+    const globalThresholdDisplay = document.createElement('span');
+    globalThresholdDisplay.textContent = '0';
+    globalThresholdDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(globalThresholdDisplay);
+    
+    // Add a divider
+    const divider = document.createElement('hr');
+    divider.style.margin = '15px 0';
+    controlsDiv.appendChild(divider);
 
     // Create min label
     const minLabel = document.createElement('label');
@@ -450,6 +589,18 @@ function createThresholdSlider() {
         updateHistogramHighlight();
     });
 
+    // Add global threshold event listener
+    globalThresholdSlider.addEventListener('input', function() {
+        const thresholdValue = parseInt(this.value);
+        globalThresholdDisplay.textContent = thresholdValue;
+        
+        // Update the global threshold line
+        updateGlobalThresholdLine(thresholdValue);
+        
+        // Update the histogram to filter bins
+        filterHistogramByThreshold(thresholdValue);
+    });
+    
     // Add rotation speed event listener
     rotationSlider.addEventListener('input', function() {
         rotationSpeed = parseFloat(this.value);
@@ -748,6 +899,297 @@ function updatePointCloudIndexRange() {
     // Update the shader uniforms
     points.material.uniforms.minIndex.value = minIndex;
     points.material.uniforms.maxIndex.value = minIndex + indexRange;
+}
+
+// Function to toggle threshold line visibility
+function toggleThresholdLine() {
+    const line = d3.select('#globalThresholdLine');
+    const label = d3.select('#thresholdLabel');
+    const button = d3.select('#thresholdToggle');
+    
+    if (!line.empty() && !label.empty()) {
+        const isVisible = line.style('display') !== 'none';
+        
+        if (isVisible) {
+            line.style('display', 'none');
+            label.style('display', 'none');
+            button.text('Show Global Threshold');
+            
+            // Hide the count label
+            d3.select('#countLabel').style('display', 'none');
+            
+            // Reset the bar colors
+            d3.selectAll('rect').style('fill', 'white');
+        } else {
+            // Get the current global threshold value
+            const globalThresholdSlider = document.querySelector('#controls input[type="range"]');
+            const thresholdValue = parseInt(globalThresholdSlider.value);
+            
+            // Update the global threshold line
+            updateGlobalThresholdLine(thresholdValue);
+            
+            // Update the histogram to filter bins
+            filterHistogramByThreshold(thresholdValue);
+            
+            button.text('Hide Global Threshold');
+        }
+    }
+}
+
+// Drag handlers for threshold line
+function dragStarted() {
+    d3.select(this).raise().style('stroke', 'orange');
+}
+
+function dragged(event) {
+    // Get the histogram SVG and create x scale
+    const svg = d3.select('#histogramGroup');
+    const width = svg.node().parentNode.getBoundingClientRect().width - 50;
+    const x = d3.scaleLinear()
+        .domain([0, 120])
+        .range([0, width]);
+    
+    const xPos = Math.max(0, Math.min(width, event.x));
+    const dataValue = x.invert(xPos);
+    
+    // Update line position
+    d3.select(this)
+        .attr('x1', xPos)
+        .attr('x2', xPos);
+        
+    // Update label
+    d3.select('#thresholdLabel')
+        .attr('x', xPos)
+        .text(dataValue.toFixed(1));
+        
+    // Update global threshold
+    updateGlobalThreshold(dataValue);
+}
+
+function dragEnded() {
+    d3.select(this).style('stroke', 'red');
+}
+
+// Function to update global threshold
+function updateGlobalThreshold(value) {
+    // Update the min threshold slider
+    const minSlider = document.querySelector('input[type="range"]');
+    minSlider.value = value;
+    minSlider.dispatchEvent(new Event('input'));
+}
+
+// Function to toggle between log and linear scale
+function toggleHistogramScale() {
+    const svg = d3.select('#histogramGroup');
+    
+    if (!svg.empty()) {
+        const currentScale = svg.attr('data-scale');
+        const height = svg.node().getBoundingClientRect().height - 40; // Approximate height
+        
+        // Create histogram data
+        const histogram = d3.histogram()
+            .domain([0, 120])
+            .thresholds(1200);
+            
+        const bins = histogram(globalChargeMassRatios);
+        
+        let y;
+        if (currentScale === 'log') {
+            // Switch to linear scale
+            y = d3.scaleLinear()
+                .domain([0, d3.max(bins, d => d.length) || 1])
+                .range([height, 0]);
+            svg.attr('data-scale', 'linear');
+            d3.select('#scaleToggle').text('Toggle Scale (Linear/Log)');
+        } else {
+            // Switch to log scale
+            y = d3.scaleLog()
+                .domain([1, d3.max(bins, d => d.length) || 1])
+                .range([height, 0]);
+            svg.attr('data-scale', 'log');
+            d3.select('#scaleToggle').text('Toggle Scale (Log/Linear)');
+        }
+        
+        // Update the bars
+        svg.selectAll('rect')
+            .attr('y', d => y(Math.max(1, d.length)))
+            .attr('height', d => height - y(Math.max(1, d.length)));
+            
+        // Update the y-axis
+        svg.select('g:nth-child(5)').remove(); // Remove the y-axis
+        svg.append('g')
+            .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".1e")))
+            .style('font-size', '10px')
+            .style('color', 'white');
+    }
+}
+
+// Function to reset zoom to original domain
+function resetHistogramZoom() {
+    const svg = d3.select('#histogramGroup');
+    
+    if (!svg.empty()) {
+        const width = svg.node().parentNode.getBoundingClientRect().width - 50;
+        
+        // Create x scale with original domain
+        const x = d3.scaleLinear()
+            .domain([0, 120])
+            .range([0, width]);
+            
+        // Update the bars
+        svg.selectAll('rect')
+            .attr('x', d => x(d.x0))
+            .attr('width', d => Math.max(0, x(d.x1) - x(d.x0)));
+            
+        // Update the x-axis
+        svg.select('g:nth-child(4)').remove(); // Remove the x-axis
+        const height = svg.node().getBoundingClientRect().height - 40;
+        svg.append('g')
+            .attr('transform', `translate(0,${height})`)
+            .call(d3.axisBottom(x).ticks(5))
+            .style('font-size', '10px')
+            .style('color', 'white');
+            
+        // Update the highlight rectangle
+        updateHistogramHighlight();
+        
+        // Update the threshold line if visible
+        const thresholdLine = d3.select('#globalThresholdLine');
+        if (thresholdLine.style('display') !== 'none') {
+            const minSlider = document.querySelector('input[type="range"]');
+            const minValue = parseFloat(minSlider.value);
+            const xPos = x(minValue);
+            
+            thresholdLine.attr('x1', xPos).attr('x2', xPos);
+            d3.select('#thresholdLabel').attr('x', xPos);
+        }
+    }
+}
+
+// Function to update the global threshold line
+function updateGlobalThresholdLine(thresholdValue) {
+    const svg = d3.select('#histogramGroup');
+    if (svg.empty()) return;
+    
+    const height = svg.node().getBoundingClientRect().height;
+    const width = svg.node().parentNode.getBoundingClientRect().width - 50;
+    
+    // Get the current y scale
+    const currentScale = svg.attr('data-scale');
+    const maxBinHeight = d3.max(d3.selectAll('rect').data(), d => d.length) || 1;
+    
+    let y;
+    if (currentScale === 'log') {
+        y = d3.scaleLog()
+            .domain([1, maxBinHeight])
+            .range([height, 0]);
+    } else {
+        y = d3.scaleLinear()
+            .domain([0, maxBinHeight])
+            .range([height, 0]);
+    }
+    
+    // Calculate y position for the threshold
+    const yPos = y(thresholdValue);
+    
+    // Check if the threshold line exists
+    let thresholdLine = svg.select('#globalThresholdLine');
+    
+    if (thresholdLine.empty()) {
+        // Create the threshold line if it doesn't exist
+        thresholdLine = svg.append('line')
+            .attr('id', 'globalThresholdLine')
+            .style('stroke', 'red')
+            .style('stroke-width', 2)
+            .style('stroke-dasharray', '5,5')
+            .style('cursor', 'ns-resize');
+    }
+    
+    // Update the threshold line position (horizontal line)
+    thresholdLine
+        .attr('x1', 0)
+        .attr('y1', yPos)
+        .attr('x2', width)
+        .attr('y2', yPos)
+        .style('display', null);
+    
+    // Update or create the threshold label
+    let thresholdLabel = svg.select('#thresholdLabel');
+    
+    if (thresholdLabel.empty()) {
+        thresholdLabel = svg.append('text')
+            .attr('id', 'thresholdLabel')
+            .style('fill', 'red')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .attr('text-anchor', 'start');
+    }
+    
+    thresholdLabel
+        .attr('x', 10)
+        .attr('y', yPos - 5)
+        .text(`Threshold: ${thresholdValue}`)
+        .style('display', null);
+    
+    // Make the threshold line draggable vertically
+    thresholdLine.call(d3.drag()
+        .on('start', function() {
+            d3.select(this).raise().style('stroke', 'orange');
+        })
+        .on('drag', function(event) {
+            const newY = Math.max(0, Math.min(height, event.y));
+            const newThreshold = Math.round(y.invert(newY));
+            
+            // Update line position
+            d3.select(this)
+                .attr('y1', newY)
+                .attr('y2', newY);
+                
+            // Update label
+            thresholdLabel
+                .attr('y', newY - 5)
+                .text(`Threshold: ${newThreshold}`);
+                
+            // Update the global threshold slider
+            const globalThresholdSlider = document.querySelector('#controls input[type="range"]');
+            globalThresholdSlider.value = newThreshold;
+            globalThresholdSlider.dispatchEvent(new Event('input'));
+        })
+        .on('end', function() {
+            d3.select(this).style('stroke', 'red');
+        }));
+}
+
+// Function to filter histogram bins based on threshold
+function filterHistogramByThreshold(thresholdValue) {
+    const svg = d3.select('#histogramGroup');
+    if (svg.empty()) return;
+    
+    // Update all bars based on the threshold
+    svg.selectAll('rect')
+        .style('fill', d => d.length >= thresholdValue ? 'white' : 'rgba(100, 100, 100, 0.3)');
+    
+    // Count how many bins are above threshold
+    const binsAboveThreshold = svg.selectAll('rect').filter(d => d.length >= thresholdValue).size();
+    const totalBins = svg.selectAll('rect').size();
+    
+    // Add or update a count label
+    let countLabel = svg.select('#countLabel');
+    
+    if (countLabel.empty()) {
+        countLabel = svg.append('text')
+            .attr('id', 'countLabel')
+            .style('fill', 'white')
+            .style('font-size', '12px')
+            .attr('text-anchor', 'end');
+    }
+    
+    const width = svg.node().parentNode.getBoundingClientRect().width - 50;
+    
+    countLabel
+        .attr('x', width - 10)
+        .attr('y', 15)
+        .text(`Bins above threshold: ${binsAboveThreshold}/${totalBins}`);
 }
 
 // Initialize and start animation
