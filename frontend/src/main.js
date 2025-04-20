@@ -283,10 +283,26 @@ function createFilteredPointCloud(min, max, color) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
     
-    // Create material with the specified color
-    const material = new THREE.PointsMaterial({
-        color: new THREE.Color(color[0], color[1], color[2]),
-        size: 1.0,
+    // Create shader material with the same size uniform as the main point cloud
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            size: { value: points.material.uniforms.size.value },
+            color: { value: new THREE.Color(color[0], color[1], color[2]) }
+        },
+        vertexShader: `
+            uniform float size;
+            void main() {
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size;
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            uniform vec3 color;
+            void main() {
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `,
         transparent: true
     });
     
