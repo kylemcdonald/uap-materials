@@ -5,10 +5,15 @@ import * as d3 from 'd3';
 let scene, camera, renderer, controls, points;
 const dropZone = document.getElementById('dropZone');
 let globalChargeMassRatios = []; // Store charge-mass ratios for histogram
+let globalPositions = []; // Store positions for filtered views
+let globalIndices = []; // Store indices for filtered views
 let rotationSpeed = 0.5; // Default rotation speed in radians per second
 let totalPoints = 0; // Total number of points in the loaded file
 let minIndex = 0; // Minimum index to display
 let indexRange = 1000000; // Number of points to display
+let selectedRanges = []; // Array to store selected charge-mass ratio ranges
+let filteredPointClouds = []; // Array to store filtered point clouds
+let isShiftPressed = false; // Track if shift key is pressed
 
 // Shader code
 const defaultVertexShader = `
@@ -20,6 +25,9 @@ const defaultVertexShader = `
     uniform float maxThreshold;
     uniform float minIndex;
     uniform float maxIndex;
+    uniform int selectedRangesCount;
+    uniform vec2 selectedRanges[20]; // Support up to 20 selected ranges (min, max)
+    uniform vec3 selectedRangeColors[20]; // Colors for each range
     
     // HSL to RGB conversion
     vec3 hsl2rgb(vec3 hsl) {
@@ -27,10 +35,30 @@ const defaultVertexShader = `
         return hsl.z + hsl.y * (rgb - 0.5) * (1.0 - abs(2.0 * hsl.z - 1.0));
     }
     
+    bool isPointInSelectedRange(float cmr, out vec3 rangeColor) {
+        for (int i = 0; i < 20; i++) {
+            if (i >= selectedRangesCount) break;
+            if (cmr >= selectedRanges[i].x && cmr <= selectedRanges[i].y) {
+                rangeColor = selectedRangeColors[i];
+                return true;
+            }
+        }
+        return false;
+    }
+    
     void main() {
-        if (chargeMassRatio >= minThreshold && chargeMassRatio <= maxThreshold && 
-            index >= minIndex && index < maxIndex) {
-            vColor = vec3(1.0);
+        bool isVisible = chargeMassRatio >= minThreshold && chargeMassRatio <= maxThreshold && 
+                         index >= minIndex && index < maxIndex;
+        
+        if (isVisible) {
+            vec3 rangeColor = vec3(1.0, 0.0, 0.0); // Default selection color is red
+            if (isPointInSelectedRange(chargeMassRatio, rangeColor)) {
+                // Selected points are highlighted with the range color
+                vColor = rangeColor;
+            } else {
+                // Regular visible points are white
+                vColor = vec3(1.0);
+            }
         } else {
             vColor = vec3(0.0);
         }
@@ -65,6 +93,8 @@ function init() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
+        // No longer needed since we're selecting on the histogram
+
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
@@ -79,6 +109,9 @@ function init() {
 
     // Create index range slider
     createIndexRangeSlider();
+
+    // Create selection info panel
+    createSelectionInfoPanel();
 
     camera.position.z = 5;
 }
@@ -188,10 +221,88 @@ function parsePOS(buffer) {
     console.log(`Successfully parsed ${positions.length / 3} points`);
     console.log('First few positions:', positions.slice(0, 9));
     
-    // Update the global array for histogram
+    // Store the data globally for filtered views
+    globalPositions = positions;
     globalChargeMassRatios = chargeMassRatios;
+    globalIndices = indices;
+    
+    // Create histogram
     createHistogram();
+    
+    // Clear any existing filtered point clouds
+    clearFilteredPointClouds();
+    
     return { positions, chargeMassRatios, indices };
+}
+
+// Function to clear all filtered point clouds
+function clearFilteredPointClouds() {
+    // Remove all filtered point clouds from the scene
+    filteredPointClouds.forEach(cloud => {
+        scene.remove(cloud);
+    });
+    
+    // Clear the array
+    filteredPointClouds = [];
+}
+
+// Function to create a filtered point cloud for a specific range
+function createFilteredPointCloud(min, max, color) {
+    if (!globalPositions.length || !globalChargeMassRatios.length) return null;
+    
+    // Filter points based on charge-mass ratio range
+    const filteredPositions = [];
+    const filteredIndices = [];
+    
+    for (let i = 0; i < globalChargeMassRatios.length; i++) {
+        const cmr = globalChargeMassRatios[i];
+        
+        // Check if the point is within the range
+        if (cmr >= min && cmr <= max) {
+            // Add the position (x, y, z)
+            filteredPositions.push(
+                globalPositions[i*3],
+                globalPositions[i*3+1],
+                globalPositions[i*3+2]
+            );
+            
+            // Add the index
+            filteredIndices.push(globalIndices[i]);
+        }
+    }
+    
+    // If no points match, return null
+    if (filteredPositions.length === 0) {
+        console.log(`No points found in range ${min} - ${max}`);
+        return null;
+    }
+    
+    console.log(`Created filtered point cloud with ${filteredPositions.length / 3} points for range ${min} - ${max}`);
+    
+    // Create geometry for the filtered points
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
+    
+    // Create material with the specified color
+    const material = new THREE.PointsMaterial({
+        color: new THREE.Color(color[0], color[1], color[2]),
+        size: 1.0,
+        transparent: true
+    });
+    
+    // Create the point cloud
+    const filteredCloud = new THREE.Points(geometry, material);
+    
+    // Center the point cloud (use the same center as the main point cloud)
+    if (points) {
+        filteredCloud.position.copy(points.position);
+    }
+    
+    // Add to scene
+    scene.add(filteredCloud);
+    
+    // Return the point cloud
+    return filteredCloud;
 }
 
 // Create histogram using D3
@@ -251,16 +362,24 @@ function createHistogram() {
         .range([height, 0]);
 
     // Add bars
-    svg.selectAll('rect')
+    svg.selectAll('rect.histogram-bar')
         .data(bins)
         .enter()
         .append('rect')
+        .attr('class', 'histogram-bar')
         .attr('x', d => x(d.x0))
         .attr('y', d => y(d.length))
         .attr('width', d => Math.max(0, x(d.x1) - x(d.x0))) // Removed the -1 to eliminate gaps
         .attr('height', d => height - y(d.length))
-        .style('fill', 'white');
-        // .style('opacity', 1.0);
+        .style('fill', 'white')
+        .style('cursor', 'pointer')
+        .on('click', function(event, d) {
+            if (isShiftPressed) {
+                // Add this range to the selection
+                addSelectedRange(d.x0, d.x1);
+                event.stopPropagation(); // Prevent other click handlers
+            }
+        });
 
     // Add highlight for selected range
     const minSlider = document.querySelector('input[type="range"]');
@@ -269,7 +388,7 @@ function createHistogram() {
     const minValue = parseFloat(minSlider.value);
     const rangeValue = parseFloat(rangeSlider.value);
     
-    // Add highlight rectangle
+    // Add highlight rectangle for current threshold
     svg.append('rect')
         .attr('x', x(minValue))
         .attr('y', 0)
@@ -278,6 +397,19 @@ function createHistogram() {
         .style('fill', 'rgba(255, 255, 0, 0.3)')
         .style('pointer-events', 'none')
         .attr('id', 'rangeHighlight');
+    
+    // Add highlight rectangles for selected ranges
+    selectedRanges.forEach((range, i) => {
+        const color = range.color;
+        svg.append('rect')
+            .attr('x', x(range.min))
+            .attr('y', 0)
+            .attr('width', x(range.max) - x(range.min))
+            .attr('height', height)
+            .style('fill', `rgba(${color[0]*255}, ${color[1]*255}, ${color[2]*255}, 0.3)`)
+            .style('pointer-events', 'none')
+            .attr('class', 'selected-range-highlight');
+    });
 
     // Add axes with numbers
     svg.append('g')
@@ -307,18 +439,23 @@ function createHistogram() {
         // Convert the brush selection from pixels to data values
         const [x0, x1] = event.selection.map(x.invert);
         
-        // Update the threshold sliders
-        const minSlider = document.querySelector('input[type="range"]');
-        const rangeSlider = document.querySelectorAll('input[type="range"]')[1];
-        
-        // Set min threshold to the start of the selection
-        minSlider.value = Math.max(0, Math.floor(x0));
-        minSlider.dispatchEvent(new Event('input'));
-        
-        // Set range to the width of the selection
-        const selectionWidth = Math.ceil(x1) - Math.floor(x0);
-        rangeSlider.value = Math.min(200, selectionWidth);
-        rangeSlider.dispatchEvent(new Event('input'));
+        if (isShiftPressed) {
+            // Add this range to the selection
+            addSelectedRange(x0, x1);
+        } else {
+            // Update the threshold sliders
+            const minSlider = document.querySelector('input[type="range"]');
+            const rangeSlider = document.querySelectorAll('input[type="range"]')[1];
+            
+            // Set min threshold to the start of the selection
+            minSlider.value = Math.max(0, Math.floor(x0));
+            minSlider.dispatchEvent(new Event('input'));
+            
+            // Set range to the width of the selection
+            const selectionWidth = Math.ceil(x1) - Math.floor(x0);
+            rangeSlider.value = Math.min(200, selectionWidth);
+            rangeSlider.dispatchEvent(new Event('input'));
+        }
     }
 }
 
@@ -496,6 +633,149 @@ function updateHistogramHighlight() {
     svg.select('.brush').raise();
 }
 
+// Create selection info panel
+function createSelectionInfoPanel() {
+    const selectionInfoDiv = document.createElement('div');
+    selectionInfoDiv.id = 'selectionInfo';
+    selectionInfoDiv.style.position = 'fixed';
+    selectionInfoDiv.style.bottom = '230px'; // Position above histogram
+    selectionInfoDiv.style.left = '20px';
+    selectionInfoDiv.style.background = 'rgba(0, 0, 0, 0.7)';
+    selectionInfoDiv.style.color = 'white';
+    selectionInfoDiv.style.padding = '10px';
+    selectionInfoDiv.style.borderRadius = '5px';
+    selectionInfoDiv.style.fontSize = '14px';
+    selectionInfoDiv.style.zIndex = '1000';
+    selectionInfoDiv.innerHTML = `
+        <div><b>Multi-Selection Mode</b></div>
+        <div>Hold SHIFT + Click on histogram to select ranges</div>
+        <div>Selected ranges: 0</div>
+        <div id="rangesList" style="max-height: 100px; overflow-y: auto; margin-top: 5px;"></div>
+        <div>
+            <button id="clearSelectionBtn" style="margin-top: 5px; padding: 3px 8px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                Clear Selection
+            </button>
+            <button id="changeColorBtn" style="margin-top: 5px; margin-left: 5px; padding: 3px 8px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                Change Color
+            </button>
+        </div>
+    `;
+    document.body.appendChild(selectionInfoDiv);
+    
+    // Add event listeners for buttons
+    document.getElementById('clearSelectionBtn').addEventListener('click', clearSelection);
+    document.getElementById('changeColorBtn').addEventListener('click', openColorPicker);
+}
+
+// Function to clear selection
+function clearSelection() {
+    // Clear the selected ranges array
+    selectedRanges = [];
+    
+    // Update the selection info panel
+    updateSelectionInfo();
+    
+    // Update the shader uniforms
+    updateSelectedRangesInShader();
+    
+    // Clear all filtered point clouds
+    clearFilteredPointClouds();
+    
+    // Redraw histogram to remove selection highlights
+    if (globalChargeMassRatios.length > 0) {
+        createHistogram();
+    }
+}
+
+// Function to open color picker
+function openColorPicker() {
+    if (selectedRanges.length === 0) {
+        alert('Please select ranges first');
+        return;
+    }
+    
+    // Create a color picker if it doesn't exist
+    let colorPicker = document.getElementById('colorPicker');
+    if (!colorPicker) {
+        colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.id = 'colorPicker';
+        colorPicker.value = '#ff0000'; // Default red
+        colorPicker.style.position = 'absolute';
+        colorPicker.style.left = '-1000px'; // Hide it
+        document.body.appendChild(colorPicker);
+        
+        colorPicker.addEventListener('change', function(e) {
+            const color = new THREE.Color(e.target.value);
+            changeSelectedRangeColor(color);
+        });
+    }
+    
+    // Trigger the color picker
+    colorPicker.click();
+}
+
+// Function to change color of selected range
+function changeSelectedRangeColor(color) {
+    if (!points || selectedRanges.length === 0) return;
+    
+    // Get the currently selected range (last one in the array)
+    const rangeIndex = selectedRanges.length - 1;
+    
+    // Update the color for this range
+    selectedRanges[rangeIndex].color = [color.r, color.g, color.b];
+    
+    // Update the selection info
+    updateSelectionInfo();
+    
+    // Update the filtered point cloud color if it exists
+    if (filteredPointClouds[rangeIndex]) {
+        filteredPointClouds[rangeIndex].material.color.set(color);
+    }
+    
+    // Redraw histogram to update selection highlights
+    if (globalChargeMassRatios.length > 0) {
+        createHistogram();
+    }
+}
+
+// Function to add a new selected range
+function addSelectedRange(min, max) {
+    // Check if we've reached the maximum number of ranges
+    if (selectedRanges.length >= 20) {
+        alert('Maximum number of selections reached (20)');
+        return;
+    }
+    
+    // Generate a random color for this range
+    const hue = Math.random();
+    const color = new THREE.Color().setHSL(hue, 1.0, 0.5);
+    const colorArray = [color.r, color.g, color.b];
+    
+    // Add the new range
+    selectedRanges.push({
+        min: min,
+        max: max,
+        color: colorArray
+    });
+    
+    // Create a filtered point cloud for this range
+    const filteredCloud = createFilteredPointCloud(min, max, colorArray);
+    
+    // Add to the filtered point clouds array if created successfully
+    if (filteredCloud) {
+        filteredPointClouds.push(filteredCloud);
+    }
+    
+    // Update the selection info
+    updateSelectionInfo();
+    
+    // Redraw histogram to show selection highlights
+    if (globalChargeMassRatios.length > 0) {
+        createHistogram();
+    }
+}
+
 // Create point cloud from POS data
 function createPointCloud(positions, chargeMassRatios, indices) {
     const geometry = new THREE.BufferGeometry();
@@ -514,7 +794,10 @@ function createPointCloud(positions, chargeMassRatios, indices) {
             minThreshold: { value: 0.0 },
             maxThreshold: { value: 200.0 },
             minIndex: { value: minIndex },
-            maxIndex: { value: minIndex + indexRange }
+            maxIndex: { value: minIndex + indexRange },
+            selectedRangesCount: { value: 0 },
+            selectedRanges: { value: new Float32Array(40).fill(-1) }, // 20 ranges (min, max pairs)
+            selectedRangeColors: { value: new Float32Array(60).fill(1.0) } // 20 colors (r,g,b triplets)
         },
         vertexShader: defaultVertexShader,
         fragmentShader: defaultFragmentShader,
@@ -537,6 +820,79 @@ function createPointCloud(positions, chargeMassRatios, indices) {
     camera.position.z = maxDim * 2;
 }
 
+// This function has been replaced by direct histogram selection
+
+// Update selection info panel
+function updateSelectionInfo() {
+    const selectionInfoDiv = document.getElementById('selectionInfo');
+    if (!selectionInfoDiv) return;
+    
+    const countElement = selectionInfoDiv.querySelector('div:nth-child(3)');
+    if (countElement) {
+        countElement.textContent = `Selected ranges: ${selectedRanges.length}`;
+    }
+    
+    // Update the ranges list
+    const rangesList = document.getElementById('rangesList');
+    if (rangesList) {
+        // Clear existing content
+        rangesList.innerHTML = '';
+        
+        // Add each range to the list
+        selectedRanges.forEach((range, index) => {
+            const rangeItem = document.createElement('div');
+            rangeItem.style.marginBottom = '3px';
+            rangeItem.style.display = 'flex';
+            rangeItem.style.alignItems = 'center';
+            
+            // Create color swatch
+            const colorSwatch = document.createElement('span');
+            colorSwatch.style.display = 'inline-block';
+            colorSwatch.style.width = '12px';
+            colorSwatch.style.height = '12px';
+            colorSwatch.style.marginRight = '5px';
+            colorSwatch.style.backgroundColor = `rgb(${range.color[0]*255}, ${range.color[1]*255}, ${range.color[2]*255})`;
+            
+            // Create range text
+            const rangeText = document.createElement('span');
+            rangeText.textContent = `Range ${index+1}: ${range.min.toFixed(2)} - ${range.max.toFixed(2)}`;
+            
+            // Add to range item
+            rangeItem.appendChild(colorSwatch);
+            rangeItem.appendChild(rangeText);
+            rangesList.appendChild(rangeItem);
+        });
+    }
+}
+
+// Update selected ranges in shader
+function updateSelectedRangesInShader() {
+    if (!points) return;
+    
+    // Create Float32Arrays to hold the range data
+    const rangesArray = new Float32Array(40).fill(-1); // 20 ranges (min, max pairs)
+    const colorsArray = new Float32Array(60).fill(1.0); // 20 colors (r,g,b triplets)
+    
+    // Fill with actual selected ranges
+    for (let i = 0; i < Math.min(selectedRanges.length, 20); i++) {
+        const range = selectedRanges[i];
+        
+        // Set range min/max (2 values per range)
+        rangesArray[i*2] = range.min;
+        rangesArray[i*2+1] = range.max;
+        
+        // Set range color (3 values per color)
+        colorsArray[i*3] = range.color[0];
+        colorsArray[i*3+1] = range.color[1];
+        colorsArray[i*3+2] = range.color[2];
+    }
+    
+    // Update the shader uniforms
+    points.material.uniforms.selectedRangesCount.value = selectedRanges.length;
+    points.material.uniforms.selectedRanges.value = rangesArray;
+    points.material.uniforms.selectedRangeColors.value = colorsArray;
+}
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
@@ -545,6 +901,11 @@ function animate() {
     // Rotate the point cloud around the z-axis
     if (points) {
         points.rotation.z += rotationSpeed * 0.01;
+        
+        // Rotate all filtered point clouds to match the main point cloud
+        filteredPointClouds.forEach(cloud => {
+            cloud.rotation.z = points.rotation.z;
+        });
     }
     
     renderer.render(scene, camera);
@@ -568,6 +929,26 @@ window.addEventListener('resize', () => {
     if (globalChargeMassRatios.length > 0) {
         createHistogram();
     }
+});
+
+// Add event listeners for shift key and mouse click
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Shift') {
+        isShiftPressed = true;
+        document.body.style.cursor = 'crosshair'; // Change cursor to indicate selection mode
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift') {
+        isShiftPressed = false;
+        document.body.style.cursor = 'auto'; // Reset cursor
+    }
+});
+
+window.addEventListener('click', (e) => {
+    // We don't need to handle clicks here anymore since we're handling them directly in the histogram
+    // The histogram bars and brush have their own click handlers
 });
 
 // Create index range slider
