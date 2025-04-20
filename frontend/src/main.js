@@ -1,23 +1,63 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-// Element colors (based on CPK coloring scheme)
-const elementColors = {
-    'H': 0xFFFFFF, 'He': 0xFFC0CB, 'Li': 0x800080, 'Be': 0x00FF00, 'B': 0xFFA500,
-    'C': 0x808080, 'N': 0x0000FF, 'O': 0xFF0000, 'F': 0xFFFF00, 'Ne': 0xFF1493,
-    'Na': 0x0000FF, 'Mg': 0x00FF00, 'Al': 0x808080, 'Si': 0xDAA520, 'P': 0xFFA500,
-    'S': 0xFFFF00, 'Cl': 0x00FF00, 'Ar': 0xFF1493, 'K': 0xFF1493, 'Ca': 0x808080,
-    'Fe': 0xFFA500, 'Cu': 0xFFA500, 'Ag': 0xC0C0C0, 'Au': 0xFFD700
-};
+import * as d3 from 'd3';
 
 let scene, camera, renderer, controls, points;
 const dropZone = document.getElementById('dropZone');
+let globalChargeMassRatios = []; // Store charge-mass ratios for histogram
+let rotationSpeed = 0.5; // Default rotation speed in radians per second
+let totalPoints = 0; // Total number of points in the loaded file
+let minIndex = 0; // Minimum index to display
+let indexRange = 1000000; // Number of points to display
+
+// Shader code
+const defaultVertexShader = `
+    attribute float chargeMassRatio;
+    attribute float index;
+    varying vec3 vColor;
+    uniform float size;
+    uniform float minThreshold;
+    uniform float maxThreshold;
+    uniform float minIndex;
+    uniform float maxIndex;
+    
+    // HSL to RGB conversion
+    vec3 hsl2rgb(vec3 hsl) {
+        vec3 rgb = clamp(abs(mod(hsl.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+        return hsl.z + hsl.y * (rgb - 0.5) * (1.0 - abs(2.0 * hsl.z - 1.0));
+    }
+    
+    void main() {
+        if (chargeMassRatio >= minThreshold && chargeMassRatio <= maxThreshold && 
+            index >= minIndex && index < maxIndex) {
+            vColor = vec3(1.0);
+        } else {
+            vColor = vec3(0.0);
+        }
+        
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size;
+        gl_Position = projectionMatrix * mvPosition;
+    }
+`;
+
+const defaultFragmentShader = `
+    varying vec3 vColor;
+    
+    void main() {
+        if (vColor.r == 0.0) {
+            discard;
+        }
+        gl_FragColor = vec4(vColor, 1.0);
+    }
+`;
 
 // Initialize Three.js scene
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
@@ -34,6 +74,12 @@ function init() {
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
+    // Create threshold slider
+    createThresholdSlider();
+
+    // Create index range slider
+    createIndexRangeSlider();
+
     camera.position.z = 5;
 }
 
@@ -41,48 +87,402 @@ function init() {
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Parse XYZ file content
-function parseXYZ(content) {
-    const lines = content.split('\n');
-    const numAtoms = parseInt(lines[0]);
-    const positions = [];
-    const colors = [];
-    
-    for (let i = 2; i < lines.length; i++) {
-        const parts = lines[i].trim().split(/\s+/);
-        if (parts.length >= 4) {
-            const element = parts[0];
-            const x = parseFloat(parts[1]);
-            const y = parseFloat(parts[2]);
-            const z = parseFloat(parts[3]);
-            
-            positions.push(x, y, z);
-            const color = elementColors[element] || 0x808080;
-            colors.push(
-                ((color >> 16) & 255) / 255,
-                ((color >> 8) & 255) / 255,
-                (color & 255) / 255
-            );
-        }
+// Convert HSL to RGB
+function hslToRgb(h, s, l) {
+    let r, g, b;
+
+    if (s === 0) {
+        r = g = b = l; // achromatic
+    } else {
+        const hue2rgb = function hue2rgb(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
     }
 
-    console.log(`Loaded ${positions.length / 3} points from XYZ file`);
-    return { positions, colors };
+    return [r, g, b];
 }
 
-// Create point cloud from XYZ data
-function createPointCloud(positions, colors) {
+// Handle file drop
+function handleDrop(e) {
+    console.log('Drop event triggered');
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    dropZone.style.display = 'none';
+    
+    const file = e.dataTransfer.files[0];
+    console.log('Dropped file:', file ? file.name : 'No file');
+    
+    if (file && file.name.toLowerCase().endsWith('.pos')) {
+        console.log('Starting to read POS file');
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            console.log('File read complete, content length:', event.target.result.byteLength);
+            const buffer = event.target.result;
+            const { positions, chargeMassRatios, indices } = parsePOS(buffer);
+            
+            if (points) {
+                console.log('Removing existing point cloud');
+                scene.remove(points);
+            }
+            console.log('Creating new point cloud');
+            createPointCloud(positions, chargeMassRatios, indices);
+        };
+        reader.onerror = function(error) {
+            console.error('Error reading file:', error);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        console.log('Invalid file type or no file dropped');
+    }
+}
+
+// Parse POS file content
+function parsePOS(buffer) {
+    console.log('Starting to parse POS content');
+    const dataView = new DataView(buffer);
+    const numPoints = buffer.byteLength / 16; // 4 floats * 4 bytes each
+    console.log('Total points in file:', numPoints);
+    
+    // Update total points for the index sliders
+    totalPoints = numPoints;
+    
+    // Update the sliders if the function exists
+    if (window.updateIndexSliders) {
+        window.updateIndexSliders();
+    }
+    
+    const positions = [];
+    const chargeMassRatios = []; // Local array for charge-mass ratios
+    const indices = []; // Array to store indices
+    
+    const MAX_POINTS = 16_000_000;
+    const numPointsToLoad = Math.min(numPoints, MAX_POINTS);
+    
+    for (let i = 0; i < numPointsToLoad; i++) {
+        const offset = i * 16;
+        const x = dataView.getFloat32(offset, false); // false for big-endian
+        const y = dataView.getFloat32(offset + 4, false);
+        const z = dataView.getFloat32(offset + 8, false);
+        const chargeMassRatio = dataView.getFloat32(offset + 12, false);
+        
+        positions.push(x, y, z);
+        chargeMassRatios.push(chargeMassRatio);
+        indices.push(i); // Add the index
+    }
+
+    console.log(`Successfully parsed ${positions.length / 3} points`);
+    console.log('First few positions:', positions.slice(0, 9));
+    
+    // Update the global array for histogram
+    globalChargeMassRatios = chargeMassRatios;
+    createHistogram();
+    return { positions, chargeMassRatios, indices };
+}
+
+// Create histogram using D3
+function createHistogram() {
+    // Remove existing histogram if any
+    d3.select('#histogram').remove();
+    
+    // Create container for histogram
+    const histogramDiv = d3.select('body')
+        .append('div')
+        .attr('id', 'histogram')
+        .style('position', 'fixed')
+        .style('bottom', '20px')
+        .style('left', '20px')
+        .style('right', '20px')
+        .style('height', '200px')
+        .style('background', 'rgba(0,0,0, 0.25)')
+        .style('border-radius', '5px')
+        .style('z-index', '1000');
+
+    // Create SVG with proper dimensions and padding
+    const margin = {top: 10, right: 10, bottom: 30, left: 40};
+    const width = window.innerWidth - margin.left - margin.right - 40; // 40px for left and right padding
+    const height = 200 - margin.top - margin.bottom;
+    
+    const svg = histogramDiv.append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Check if we have data to display
+    if (globalChargeMassRatios.length === 0) {
+        svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', height / 2)
+            .attr('text-anchor', 'middle')
+            .text('No data available');
+        return;
+    }
+
+    // Create histogram data
+    const histogram = d3.histogram()
+        .domain([0, 120])
+        .thresholds(1200); // Increased number of thresholds to 1200
+
+    const bins = histogram(globalChargeMassRatios);
+
+    // Create scales
+    const x = d3.scaleLinear()
+        .domain([0, 120])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length)])
+        .range([height, 0]);
+
+    // Add bars
+    svg.selectAll('rect')
+        .data(bins)
+        .enter()
+        .append('rect')
+        .attr('x', d => x(d.x0))
+        .attr('y', d => y(d.length))
+        .attr('width', d => Math.max(0, x(d.x1) - x(d.x0))) // Removed the -1 to eliminate gaps
+        .attr('height', d => height - y(d.length))
+        .style('fill', 'white');
+        // .style('opacity', 1.0);
+
+    // Add highlight for selected range
+    const minSlider = document.querySelector('input[type="range"]');
+    const rangeSlider = document.querySelectorAll('input[type="range"]')[1];
+    
+    const minValue = parseFloat(minSlider.value);
+    const rangeValue = parseFloat(rangeSlider.value);
+    
+    // Add highlight rectangle
+    svg.append('rect')
+        .attr('x', x(minValue))
+        .attr('y', 0)
+        .attr('width', x(minValue + rangeValue) - x(minValue))
+        .attr('height', height)
+        .style('fill', 'rgba(255, 255, 0, 0.3)')
+        .style('pointer-events', 'none')
+        .attr('id', 'rangeHighlight');
+
+    // Do not add axes
+    // svg.append('g')
+    //     .attr('transform', `translate(0,${height})`)
+    //     .call(d3.axisBottom(x).ticks(5))
+    //     .style('font-size', '8px');
+
+    // svg.append('g')
+    //     .call(d3.axisLeft(y).ticks(5))
+    //     .style('font-size', '8px');
+}
+
+// Create threshold slider
+function createThresholdSlider() {
+    // Create container for controls
+    const controlsDiv = document.createElement('div');
+    controlsDiv.id = 'controls';
+    controlsDiv.style.position = 'fixed';
+    controlsDiv.style.top = '20px';
+    controlsDiv.style.left = '20px';
+    controlsDiv.style.background = 'rgba(255, 255, 255, 0.9)';
+    controlsDiv.style.padding = '10px';
+    controlsDiv.style.borderRadius = '5px';
+    controlsDiv.style.border = '1px solid #ccc';
+    document.body.appendChild(controlsDiv);
+
+    // Create min label
+    const minLabel = document.createElement('label');
+    minLabel.textContent = 'Min Threshold: ';
+    minLabel.style.display = 'block';
+    minLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(minLabel);
+
+    // Create min slider
+    const minSlider = document.createElement('input');
+    minSlider.type = 'range';
+    minSlider.min = '0';
+    minSlider.max = '200';
+    minSlider.value = '0';
+    minSlider.step = '1';
+    minSlider.style.width = '200px';
+    controlsDiv.appendChild(minSlider);
+
+    // Create min value display
+    const minValueDisplay = document.createElement('span');
+    minValueDisplay.textContent = '0';
+    minValueDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(minValueDisplay);
+
+    // Create range label
+    const rangeLabel = document.createElement('label');
+    rangeLabel.textContent = 'Range: ';
+    rangeLabel.style.display = 'block';
+    rangeLabel.style.marginTop = '10px';
+    rangeLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(rangeLabel);
+
+    // Create range slider
+    const rangeSlider = document.createElement('input');
+    rangeSlider.type = 'range';
+    rangeSlider.min = '0';
+    rangeSlider.max = '200';
+    rangeSlider.value = '200';
+    rangeSlider.step = '1';
+    rangeSlider.style.width = '200px';
+    controlsDiv.appendChild(rangeSlider);
+
+    // Create range value display
+    const rangeValueDisplay = document.createElement('span');
+    rangeValueDisplay.textContent = '200';
+    rangeValueDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(rangeValueDisplay);
+
+    // Create rotation speed label
+    const rotationLabel = document.createElement('label');
+    rotationLabel.textContent = 'Rotation Speed: ';
+    rotationLabel.style.display = 'block';
+    rotationLabel.style.marginTop = '10px';
+    rotationLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(rotationLabel);
+
+    // Create rotation speed slider
+    const rotationSlider = document.createElement('input');
+    rotationSlider.type = 'range';
+    rotationSlider.min = '0';
+    rotationSlider.max = '2';
+    rotationSlider.value = '0.5';
+    rotationSlider.step = '0.1';
+    rotationSlider.style.width = '200px';
+    controlsDiv.appendChild(rotationSlider);
+
+    // Create rotation speed value display
+    const rotationValueDisplay = document.createElement('span');
+    rotationValueDisplay.textContent = '0.5';
+    rotationValueDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(rotationValueDisplay);
+
+    // Add event listeners
+    minSlider.addEventListener('input', function() {
+        const minValue = parseFloat(this.value);
+        const rangeValue = parseFloat(rangeSlider.value);
+        minValueDisplay.textContent = minValue;
+        
+        // Ensure min + range doesn't exceed 200
+        if (minValue + rangeValue > 200) {
+            rangeSlider.value = 200 - minValue;
+            rangeValueDisplay.textContent = 200 - minValue;
+        }
+        
+        // Update the threshold uniforms if points exist
+        if (points && points.material.uniforms) {
+            points.material.uniforms.minThreshold.value = minValue;
+            points.material.uniforms.maxThreshold.value = minValue + parseFloat(rangeSlider.value);
+        }
+        
+        // Update histogram highlight
+        updateHistogramHighlight();
+    });
+
+    rangeSlider.addEventListener('input', function() {
+        const rangeValue = parseFloat(this.value);
+        const minValue = parseFloat(minSlider.value);
+        rangeValueDisplay.textContent = rangeValue;
+        
+        // Ensure min + range doesn't exceed 200
+        if (minValue + rangeValue > 200) {
+            minSlider.value = 200 - rangeValue;
+            minValueDisplay.textContent = 200 - rangeValue;
+        }
+        
+        // Update the threshold uniforms if points exist
+        if (points && points.material.uniforms) {
+            points.material.uniforms.minThreshold.value = parseFloat(minSlider.value);
+            points.material.uniforms.maxThreshold.value = parseFloat(minSlider.value) + rangeValue;
+        }
+        
+        // Update histogram highlight
+        updateHistogramHighlight();
+    });
+
+    // Add rotation speed event listener
+    rotationSlider.addEventListener('input', function() {
+        rotationSpeed = parseFloat(this.value);
+        rotationValueDisplay.textContent = rotationSpeed.toFixed(1);
+    });
+}
+
+// Function to update histogram highlight
+function updateHistogramHighlight() {
+    const minSlider = document.querySelector('input[type="range"]');
+    const rangeSlider = document.querySelectorAll('input[type="range"]')[1];
+    
+    const minValue = parseFloat(minSlider.value);
+    const rangeValue = parseFloat(rangeSlider.value);
+    
+    // Get the histogram SVG
+    const histogramDiv = d3.select('#histogram');
+    if (histogramDiv.empty()) return;
+    
+    const svg = histogramDiv.select('svg g');
+    const width = svg.node().parentNode.getBoundingClientRect().width - 50; // Approximate width
+    
+    // Create x scale
+    const x = d3.scaleLinear()
+        .domain([0, 120])
+        .range([0, width]);
+    
+    // Update or create highlight
+    let highlight = svg.select('#rangeHighlight');
+    
+    if (highlight.empty()) {
+        highlight = svg.append('rect')
+            .attr('id', 'rangeHighlight')
+            .style('fill', 'rgba(255, 255, 0, 0.3)')
+            .style('pointer-events', 'none');
+    }
+    
+    highlight
+        .attr('x', x(minValue))
+        .attr('width', x(minValue + rangeValue) - x(minValue));
+}
+
+// Create point cloud from POS data
+function createPointCloud(positions, chargeMassRatios, indices) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    
+    // Set the charge-mass ratio attribute directly from the array
+    geometry.setAttribute('chargeMassRatio', new THREE.Float32BufferAttribute(chargeMassRatios, 1));
+    
+    // Set the index attribute
+    geometry.setAttribute('index', new THREE.Float32BufferAttribute(indices, 1));
 
-    const material = new THREE.PointsMaterial({
-        size: 0.05,
-        vertexColors: true,
-        sizeAttenuation: true
+    // Create custom shader material
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            size: { value: 1.0 },
+            minThreshold: { value: 0.0 },
+            maxThreshold: { value: 200.0 },
+            minIndex: { value: minIndex },
+            maxIndex: { value: minIndex + indexRange }
+        },
+        vertexShader: defaultVertexShader,
+        fragmentShader: defaultFragmentShader,
+        transparent: true,
+        vertexColors: false
     });
 
     points = new THREE.Points(geometry, material);
@@ -100,46 +500,221 @@ function createPointCloud(positions, colors) {
     camera.position.z = maxDim * 2;
 }
 
-// Handle file drop
-function handleDrop(e) {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    dropZone.style.display = 'none';
-    
-    const file = e.dataTransfer.files[0];
-    if (file && file.name.endsWith('.xyz')) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const content = event.target.result;
-            const { positions, colors } = parseXYZ(content);
-            
-            if (points) {
-                scene.remove(points);
-            }
-            createPointCloud(positions, colors);
-        };
-        reader.readAsText(file);
-    }
-}
-
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    
+    // Rotate the point cloud around the z-axis
+    if (points) {
+        points.rotation.z += rotationSpeed * 0.01;
+    }
+    
     renderer.render(scene, camera);
 }
 
 // Event listeners
 window.addEventListener('resize', onWindowResize);
 window.addEventListener('dragover', (e) => {
+    console.log('Drag over event');
     e.preventDefault();
     dropZone.classList.add('dragover');
 });
 window.addEventListener('dragleave', () => {
+    console.log('Drag leave event');
     dropZone.classList.remove('dragover');
 });
 window.addEventListener('drop', handleDrop);
 
+// Add resize event listener for histogram
+window.addEventListener('resize', () => {
+    if (globalChargeMassRatios.length > 0) {
+        createHistogram();
+    }
+});
+
+// Create index range slider
+function createIndexRangeSlider() {
+    // Create container for index controls
+    const indexControlsDiv = document.createElement('div');
+    indexControlsDiv.id = 'indexControls';
+    indexControlsDiv.style.position = 'fixed';
+    indexControlsDiv.style.top = '20px';
+    indexControlsDiv.style.right = '20px';
+    indexControlsDiv.style.background = 'rgba(255, 255, 255, 0.9)';
+    indexControlsDiv.style.padding = '10px';
+    indexControlsDiv.style.borderRadius = '5px';
+    indexControlsDiv.style.border = '1px solid #ccc';
+    indexControlsDiv.style.width = '250px';
+    document.body.appendChild(indexControlsDiv);
+
+    // Create title
+    const titleDiv = document.createElement('div');
+    titleDiv.textContent = 'Point Index Controls';
+    titleDiv.style.fontWeight = 'bold';
+    titleDiv.style.marginBottom = '10px';
+    titleDiv.style.textAlign = 'center';
+    indexControlsDiv.appendChild(titleDiv);
+
+    // Create total points display
+    const totalPointsDiv = document.createElement('div');
+    totalPointsDiv.style.marginBottom = '15px';
+    totalPointsDiv.style.textAlign = 'center';
+    totalPointsDiv.style.fontSize = '0.9em';
+    totalPointsDiv.textContent = 'Total Points: 0';
+    indexControlsDiv.appendChild(totalPointsDiv);
+
+    // Create min index label
+    const minIndexLabel = document.createElement('label');
+    minIndexLabel.textContent = 'Min Index: ';
+    minIndexLabel.style.display = 'block';
+    minIndexLabel.style.marginBottom = '5px';
+    indexControlsDiv.appendChild(minIndexLabel);
+
+    // Create min index slider
+    const minIndexSlider = document.createElement('input');
+    minIndexSlider.type = 'range';
+    minIndexSlider.min = '0';
+    minIndexSlider.max = '1000000';
+    minIndexSlider.value = '0';
+    minIndexSlider.step = '1000';
+    minIndexSlider.style.width = '100%';
+    indexControlsDiv.appendChild(minIndexSlider);
+
+    // Create min index value display
+    const minIndexValueDisplay = document.createElement('span');
+    minIndexValueDisplay.textContent = '0';
+    minIndexValueDisplay.style.marginLeft = '10px';
+    indexControlsDiv.appendChild(minIndexValueDisplay);
+
+    // Create index range label
+    const indexRangeLabel = document.createElement('label');
+    indexRangeLabel.textContent = 'Index Range: ';
+    indexRangeLabel.style.display = 'block';
+    indexRangeLabel.style.marginTop = '10px';
+    indexRangeLabel.style.marginBottom = '5px';
+    indexControlsDiv.appendChild(indexRangeLabel);
+
+    // Create index range slider
+    const indexRangeSlider = document.createElement('input');
+    indexRangeSlider.type = 'range';
+    indexRangeSlider.min = '1000';
+    indexRangeSlider.max = '1000000';
+    indexRangeSlider.value = '1000000';
+    indexRangeSlider.step = '1000';
+    indexRangeSlider.style.width = '100%';
+    indexControlsDiv.appendChild(indexRangeSlider);
+
+    // Create index range value display
+    const indexRangeValueDisplay = document.createElement('span');
+    indexRangeValueDisplay.textContent = '1000000';
+    indexRangeValueDisplay.style.marginLeft = '10px';
+    indexControlsDiv.appendChild(indexRangeValueDisplay);
+
+    // Create display range info
+    const rangeInfoDiv = document.createElement('div');
+    rangeInfoDiv.style.marginTop = '10px';
+    rangeInfoDiv.style.fontSize = '0.8em';
+    rangeInfoDiv.style.textAlign = 'center';
+    rangeInfoDiv.textContent = 'Displaying: 0 - 1,000,000';
+    indexControlsDiv.appendChild(rangeInfoDiv);
+
+    // Add event listeners
+    minIndexSlider.addEventListener('input', function() {
+        const newMinIndex = parseInt(this.value);
+        const currentRange = parseInt(indexRangeSlider.value);
+        minIndexValueDisplay.textContent = newMinIndex.toLocaleString();
+        
+        // Ensure min + range doesn't exceed total points
+        if (newMinIndex + currentRange > totalPoints) {
+            indexRangeSlider.value = totalPoints - newMinIndex;
+            indexRangeValueDisplay.textContent = (totalPoints - newMinIndex).toLocaleString();
+        }
+        
+        minIndex = newMinIndex;
+        indexRange = parseInt(indexRangeSlider.value);
+        
+        // Update range info
+        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    });
+
+    indexRangeSlider.addEventListener('input', function() {
+        const newRange = parseInt(this.value);
+        const currentMin = parseInt(minIndexSlider.value);
+        indexRangeValueDisplay.textContent = newRange.toLocaleString();
+        
+        // Ensure min + range doesn't exceed total points
+        if (currentMin + newRange > totalPoints) {
+            minIndexSlider.value = totalPoints - newRange;
+            minIndexValueDisplay.textContent = (totalPoints - newRange).toLocaleString();
+        }
+        
+        minIndex = parseInt(minIndexSlider.value);
+        indexRange = newRange;
+        
+        // Update range info
+        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    });
+    
+    // Function to update slider max values based on total points
+    function updateSliderMaxValues() {
+        // Update total points display
+        totalPointsDiv.textContent = `Total Points: ${totalPoints.toLocaleString()}`;
+        
+        // Update min index slider max
+        minIndexSlider.max = totalPoints.toString();
+        
+        // Update index range slider max
+        const maxRange = Math.min(1000000, totalPoints);
+        indexRangeSlider.max = maxRange.toString();
+        
+        // If current values exceed new max, adjust them
+        if (parseInt(minIndexSlider.value) > totalPoints) {
+            minIndexSlider.value = '0';
+            minIndexValueDisplay.textContent = '0';
+            minIndex = 0;
+        }
+        
+        if (parseInt(indexRangeSlider.value) > maxRange) {
+            indexRangeSlider.value = maxRange.toString();
+            indexRangeValueDisplay.textContent = maxRange.toLocaleString();
+            indexRange = maxRange;
+        }
+        
+        // Update range info
+        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    }
+    
+    // Store the update function for later use
+    window.updateIndexSliders = updateSliderMaxValues;
+}
+
+// Update point cloud based on index range
+function updatePointCloudIndexRange() {
+    if (!points) return;
+    
+    // Update the shader uniforms
+    points.material.uniforms.minIndex.value = minIndex;
+    points.material.uniforms.maxIndex.value = minIndex + indexRange;
+}
+
 // Initialize and start animation
+console.log('Initializing Three.js scene');
 init();
+console.log('Starting animation loop');
 animate(); 

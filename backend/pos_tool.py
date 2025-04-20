@@ -158,24 +158,29 @@ def create_mass_spectrum(pos_data, output_file):
     plt.figure(figsize=(12, 6))
     
     # Pre-compute histogram
-    hist, bin_edges = np.histogram(pos_data[:, 3], bins=300, range=(0, 30), density=True)
+    element_min = 0
+    element_max = 125
+    element_range = element_max - element_min
+    hist, bin_edges = np.histogram(pos_data[:, 3], bins=element_range*20, range=(element_min, element_max), density=False)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     
-    # Plot histogram
+    # Plot histogram with logarithmic scale
     plt.bar(bin_centers, hist, width=np.diff(bin_edges), alpha=0.7)
+    plt.yscale('log')
     
     # Add element labels with isotope numbers
-    for mass, (element, isotope_label) in isotopic_ratios_with_numbers.items():
-        if 0 <= mass <= 30:  # Only consider elements within our plot range
-            # Find the closest bin center
-            bin_idx = np.argmin(np.abs(bin_centers - mass))
-            # Add text at the top of the histogram at this position
-            plt.text(mass, hist[bin_idx], isotope_label, 
-                    ha='center', va='bottom',
-                    fontsize=8)
+    # for mass, (element, isotope_label) in isotopic_ratios_with_numbers.items():
+    #     if element_min <= mass <= element_max:  # Only consider elements within our plot range
+    #         # Find the closest bin center
+    #         bin_idx = np.argmin(np.abs(bin_centers - mass))
+    #         # Add text at the top of the histogram at this position
+    #         plt.text(mass, hist[bin_idx], isotope_label, 
+    #                 ha='center', va='bottom',
+    #                 fontsize=8)
     
+    plt.xlim(element_min, element_max)
     plt.xlabel('Mass-to-Charge Ratio (Da)')
-    plt.ylabel('Density')
+    plt.ylabel('Count (log scale)')
     plt.title('Mass Spectrum')
     plt.grid(True, alpha=0.3)
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
