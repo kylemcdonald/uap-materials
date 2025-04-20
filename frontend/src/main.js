@@ -245,8 +245,8 @@ function createHistogram() {
         .domain([0, 120])
         .range([0, width]);
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(bins, d => d.length)])
+    const y = d3.scaleLog()
+        .domain([1, d3.max(bins, d => d.length)])
         .range([height, 0]);
 
     // Add bars
@@ -599,8 +599,8 @@ function createIndexRangeSlider() {
     const indexRangeSlider = document.createElement('input');
     indexRangeSlider.type = 'range';
     indexRangeSlider.min = '1000';
-    indexRangeSlider.max = '1000000';
-    indexRangeSlider.value = '1000000';
+    indexRangeSlider.max = '1000000'; // This will be updated when data is loaded
+    indexRangeSlider.value = '1000000'; // This will be updated when data is loaded
     indexRangeSlider.step = '1000';
     indexRangeSlider.style.width = '100%';
     indexControlsDiv.appendChild(indexRangeSlider);
@@ -674,8 +674,8 @@ function createIndexRangeSlider() {
         // Update min index slider max
         minIndexSlider.max = totalPoints.toString();
         
-        // Update index range slider max
-        const maxRange = Math.min(1000000, totalPoints);
+        // Update index range slider max to use total points instead of hardcoded value
+        const maxRange = totalPoints;
         indexRangeSlider.max = maxRange.toString();
         
         // If current values exceed new max, adjust them
