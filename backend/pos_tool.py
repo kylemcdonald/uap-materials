@@ -155,7 +155,8 @@ def create_mass_spectrum(pos_data, output_file):
         pos_data: NumPy array containing the ion data
         output_file: Path to save the PNG file
     """
-    plt.figure(figsize=(12, 6))
+    plt.style.use('dark_background')
+    plt.figure(figsize=(12, 2))
     
     # Pre-compute histogram
     element_min = 0
@@ -164,26 +165,41 @@ def create_mass_spectrum(pos_data, output_file):
     hist, bin_edges = np.histogram(pos_data[:, 3], bins=element_range*20, range=(element_min, element_max), density=False)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     
+    # Save histogram data as numpy array
+    histogram_data = np.column_stack((bin_centers, hist))
+    histogram_file = os.path.join(MASS_SPECTRUM_DIR, os.path.splitext(os.path.basename(output_file))[0] + '_data.npy')
+    np.save(histogram_file, histogram_data)
+    
     # Plot histogram with logarithmic scale
-    plt.bar(bin_centers, hist, width=np.diff(bin_edges), alpha=0.7)
+    plt.bar(bin_centers, hist, width=np.diff(bin_edges), alpha=0.7, color='white')
     plt.yscale('log')
     
+    # Elements identified in the image (ignoring compounds/radicals like OH, AlO, etc.)
+    elements_in_image = {'N', 'Al', 'Mg', 'Si', 'Fe', 'B', 'C', 'O', 'P', 'Cl', 'Mn', 'Cu', 'Ga', 'Ru', 'Ca', 'Cr', 'Co', 'Ni', 'K'}
+
+    # Filter the dictionary
+    filtered_isotopic_ratios = {
+        mass: (symbol, isotope)
+        for mass, (symbol, isotope) in isotopic_ratios_with_numbers.items()
+        if symbol in elements_in_image
+    }
+    
     # Add element labels with isotope numbers
-    # for mass, (element, isotope_label) in isotopic_ratios_with_numbers.items():
-    #     if element_min <= mass <= element_max:  # Only consider elements within our plot range
-    #         # Find the closest bin center
-    #         bin_idx = np.argmin(np.abs(bin_centers - mass))
-    #         # Add text at the top of the histogram at this position
-    #         plt.text(mass, hist[bin_idx], isotope_label, 
-    #                 ha='center', va='bottom',
-    #                 fontsize=8)
+    for mass, (element, isotope_label) in filtered_isotopic_ratios.items():
+        if element_min <= mass <= element_max:  # Only consider elements within our plot range
+            # Find the closest bin center
+            bin_idx = np.argmin(np.abs(bin_centers - mass))
+            # Add text at the top of the histogram at this position
+            plt.text(mass, hist[bin_idx], isotope_label, 
+                    ha='center', va='bottom',
+                    fontsize=8, color='white')
     
     plt.xlim(element_min, element_max)
-    plt.xlabel('Mass-to-Charge Ratio (Da)')
-    plt.ylabel('Count (log scale)')
-    plt.title('Mass Spectrum')
-    plt.grid(True, alpha=0.3)
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.xlabel('Mass-to-Charge Ratio (Da)', color='white')
+    plt.ylabel('Count (log scale)', color='white')
+    plt.grid(True, alpha=0.3, color='white')
+    plt.tick_params(colors='white')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='black')
     plt.close()
 
 def print_bounding_box(pos_data):
