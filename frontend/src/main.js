@@ -7,7 +7,7 @@ const dropZone = document.getElementById('dropZone');
 let globalChargeMassRatios = []; // Store charge-mass ratios for histogram
 let globalPositions = []; // Store positions for filtered views
 let globalIndices = []; // Store indices for filtered views
-let rotationSpeed = 0.5; // Default rotation speed in radians per second
+let rotationSpeed = 0.1; // Default rotation speed in radians per second
 let totalPoints = 0; // Total number of points in the loaded file
 let minIndex = 0; // Minimum index to display
 let indexRange = 1000000; // Number of points to display
@@ -106,9 +106,6 @@ function init() {
 
     // Create threshold slider
     createThresholdSlider();
-
-    // Create index range slider
-    createIndexRangeSlider();
 
     // Create selection info panel
     createSelectionInfoPanel();
@@ -483,10 +480,10 @@ function createThresholdSlider() {
     controlsDiv.style.position = 'fixed';
     controlsDiv.style.top = '20px';
     controlsDiv.style.left = '20px';
-    controlsDiv.style.background = 'rgba(255, 255, 255, 0.9)';
+    controlsDiv.style.background = 'rgba(0, 0, 0, 0.7)';
     controlsDiv.style.padding = '10px';
     controlsDiv.style.borderRadius = '5px';
-    controlsDiv.style.border = '1px solid #ccc';
+    controlsDiv.style.color = 'white';
     document.body.appendChild(controlsDiv);
 
     // Create min label
@@ -548,17 +545,64 @@ function createThresholdSlider() {
     const rotationSlider = document.createElement('input');
     rotationSlider.type = 'range';
     rotationSlider.min = '0';
-    rotationSlider.max = '2';
-    rotationSlider.value = '0.5';
-    rotationSlider.step = '0.1';
+    rotationSlider.max = '1';
+    rotationSlider.value = '0.1';
+    rotationSlider.step = '0.01';
     rotationSlider.style.width = '200px';
     controlsDiv.appendChild(rotationSlider);
 
     // Create rotation speed value display
     const rotationValueDisplay = document.createElement('span');
-    rotationValueDisplay.textContent = '0.5';
+    rotationValueDisplay.textContent = '0.1';
     rotationValueDisplay.style.marginLeft = '10px';
     controlsDiv.appendChild(rotationValueDisplay);
+
+    // Create min index label
+    const minIndexLabel = document.createElement('label');
+    minIndexLabel.textContent = 'Min Index: ';
+    minIndexLabel.style.display = 'block';
+    minIndexLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(minIndexLabel);
+
+    // Create min index slider
+    const minIndexSlider = document.createElement('input');
+    minIndexSlider.type = 'range';
+    minIndexSlider.min = '0';
+    minIndexSlider.max = '1000000';
+    minIndexSlider.value = '0';
+    minIndexSlider.step = '1000';
+    minIndexSlider.style.width = '200px';
+    controlsDiv.appendChild(minIndexSlider);
+
+    // Create min index value display
+    const minIndexValueDisplay = document.createElement('span');
+    minIndexValueDisplay.textContent = '0';
+    minIndexValueDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(minIndexValueDisplay);
+
+    // Create index range label
+    const indexRangeLabel = document.createElement('label');
+    indexRangeLabel.textContent = 'Index Range: ';
+    indexRangeLabel.style.display = 'block';
+    indexRangeLabel.style.marginTop = '10px';
+    indexRangeLabel.style.marginBottom = '5px';
+    controlsDiv.appendChild(indexRangeLabel);
+
+    // Create index range slider
+    const indexRangeSlider = document.createElement('input');
+    indexRangeSlider.type = 'range';
+    indexRangeSlider.min = '1000';
+    indexRangeSlider.max = '1000000';
+    indexRangeSlider.value = '1000000';
+    indexRangeSlider.step = '1000';
+    indexRangeSlider.style.width = '200px';
+    controlsDiv.appendChild(indexRangeSlider);
+
+    // Create index range value display
+    const indexRangeValueDisplay = document.createElement('span');
+    indexRangeValueDisplay.textContent = '1000000';
+    indexRangeValueDisplay.style.marginLeft = '10px';
+    controlsDiv.appendChild(indexRangeValueDisplay);
 
     // Add event listeners
     minSlider.addEventListener('input', function() {
@@ -608,6 +652,77 @@ function createThresholdSlider() {
         rotationSpeed = parseFloat(this.value);
         rotationValueDisplay.textContent = rotationSpeed.toFixed(1);
     });
+
+    // Add index control event listeners
+    minIndexSlider.addEventListener('input', function() {
+        const newMinIndex = parseInt(this.value);
+        const currentRange = parseInt(indexRangeSlider.value);
+        minIndexValueDisplay.textContent = newMinIndex.toLocaleString();
+        
+        // Ensure min + range doesn't exceed total points
+        if (newMinIndex + currentRange > totalPoints) {
+            indexRangeSlider.value = totalPoints - newMinIndex;
+            indexRangeValueDisplay.textContent = (totalPoints - newMinIndex).toLocaleString();
+        }
+        
+        minIndex = newMinIndex;
+        indexRange = parseInt(indexRangeSlider.value);
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    });
+
+    indexRangeSlider.addEventListener('input', function() {
+        const newRange = parseInt(this.value);
+        const currentMin = parseInt(minIndexSlider.value);
+        indexRangeValueDisplay.textContent = newRange.toLocaleString();
+        
+        // Ensure min + range doesn't exceed total points
+        if (currentMin + newRange > totalPoints) {
+            minIndexSlider.value = totalPoints - newRange;
+            minIndexValueDisplay.textContent = (totalPoints - newRange).toLocaleString();
+        }
+        
+        minIndex = parseInt(minIndexSlider.value);
+        indexRange = newRange;
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    });
+    
+    // Function to update slider max values based on total points
+    function updateSliderMaxValues() {
+        // Update min index slider max
+        minIndexSlider.max = totalPoints.toString();
+        
+        // Update index range slider max
+        const maxRange = totalPoints;
+        indexRangeSlider.max = maxRange.toString();
+        
+        // Set index range to maximum value by default
+        indexRangeSlider.value = maxRange.toString();
+        indexRangeValueDisplay.textContent = maxRange.toLocaleString();
+        indexRange = maxRange;
+        
+        // If current values exceed new max, adjust them
+        if (parseInt(minIndexSlider.value) > totalPoints) {
+            minIndexSlider.value = '0';
+            minIndexValueDisplay.textContent = '0';
+            minIndex = 0;
+        }
+        
+        // Update the point cloud if it exists
+        if (points) {
+            updatePointCloudIndexRange();
+        }
+    }
+    
+    // Store the update function for later use
+    window.updateIndexSliders = updateSliderMaxValues;
 }
 
 // Function to update histogram highlight
@@ -836,8 +951,6 @@ function createPointCloud(positions, chargeMassRatios, indices) {
     camera.position.z = maxDim * 2;
 }
 
-// This function has been replaced by direct histogram selection
-
 // Update selection info panel
 function updateSelectionInfo() {
     const selectionInfoDiv = document.getElementById('selectionInfo');
@@ -966,177 +1079,6 @@ window.addEventListener('click', (e) => {
     // We don't need to handle clicks here anymore since we're handling them directly in the histogram
     // The histogram bars and brush have their own click handlers
 });
-
-// Create index range slider
-function createIndexRangeSlider() {
-    // Create container for index controls
-    const indexControlsDiv = document.createElement('div');
-    indexControlsDiv.id = 'indexControls';
-    indexControlsDiv.style.position = 'fixed';
-    indexControlsDiv.style.top = '20px';
-    indexControlsDiv.style.right = '20px';
-    indexControlsDiv.style.background = 'rgba(255, 255, 255, 0.9)';
-    indexControlsDiv.style.padding = '10px';
-    indexControlsDiv.style.borderRadius = '5px';
-    indexControlsDiv.style.border = '1px solid #ccc';
-    indexControlsDiv.style.width = '250px';
-    document.body.appendChild(indexControlsDiv);
-
-    // Create title
-    const titleDiv = document.createElement('div');
-    titleDiv.textContent = 'Point Index Controls';
-    titleDiv.style.fontWeight = 'bold';
-    titleDiv.style.marginBottom = '10px';
-    titleDiv.style.textAlign = 'center';
-    indexControlsDiv.appendChild(titleDiv);
-
-    // Create total points display
-    const totalPointsDiv = document.createElement('div');
-    totalPointsDiv.style.marginBottom = '15px';
-    totalPointsDiv.style.textAlign = 'center';
-    totalPointsDiv.style.fontSize = '0.9em';
-    totalPointsDiv.textContent = 'Total Points: 0';
-    indexControlsDiv.appendChild(totalPointsDiv);
-
-    // Create min index label
-    const minIndexLabel = document.createElement('label');
-    minIndexLabel.textContent = 'Min Index: ';
-    minIndexLabel.style.display = 'block';
-    minIndexLabel.style.marginBottom = '5px';
-    indexControlsDiv.appendChild(minIndexLabel);
-
-    // Create min index slider
-    const minIndexSlider = document.createElement('input');
-    minIndexSlider.type = 'range';
-    minIndexSlider.min = '0';
-    minIndexSlider.max = '1000000';
-    minIndexSlider.value = '0';
-    minIndexSlider.step = '1000';
-    minIndexSlider.style.width = '100%';
-    indexControlsDiv.appendChild(minIndexSlider);
-
-    // Create min index value display
-    const minIndexValueDisplay = document.createElement('span');
-    minIndexValueDisplay.textContent = '0';
-    minIndexValueDisplay.style.marginLeft = '10px';
-    indexControlsDiv.appendChild(minIndexValueDisplay);
-
-    // Create index range label
-    const indexRangeLabel = document.createElement('label');
-    indexRangeLabel.textContent = 'Index Range: ';
-    indexRangeLabel.style.display = 'block';
-    indexRangeLabel.style.marginTop = '10px';
-    indexRangeLabel.style.marginBottom = '5px';
-    indexControlsDiv.appendChild(indexRangeLabel);
-
-    // Create index range slider
-    const indexRangeSlider = document.createElement('input');
-    indexRangeSlider.type = 'range';
-    indexRangeSlider.min = '1000';
-    indexRangeSlider.max = '1000000';
-    indexRangeSlider.value = '1000000';
-    indexRangeSlider.step = '1000';
-    indexRangeSlider.style.width = '100%';
-    indexControlsDiv.appendChild(indexRangeSlider);
-
-    // Create index range value display
-    const indexRangeValueDisplay = document.createElement('span');
-    indexRangeValueDisplay.textContent = '1000000';
-    indexRangeValueDisplay.style.marginLeft = '10px';
-    indexControlsDiv.appendChild(indexRangeValueDisplay);
-
-    // Create display range info
-    const rangeInfoDiv = document.createElement('div');
-    rangeInfoDiv.style.marginTop = '10px';
-    rangeInfoDiv.style.fontSize = '0.8em';
-    rangeInfoDiv.style.textAlign = 'center';
-    rangeInfoDiv.textContent = 'Displaying: 0 - 1,000,000';
-    indexControlsDiv.appendChild(rangeInfoDiv);
-
-    // Add event listeners
-    minIndexSlider.addEventListener('input', function() {
-        const newMinIndex = parseInt(this.value);
-        const currentRange = parseInt(indexRangeSlider.value);
-        minIndexValueDisplay.textContent = newMinIndex.toLocaleString();
-        
-        // Ensure min + range doesn't exceed total points
-        if (newMinIndex + currentRange > totalPoints) {
-            indexRangeSlider.value = totalPoints - newMinIndex;
-            indexRangeValueDisplay.textContent = (totalPoints - newMinIndex).toLocaleString();
-        }
-        
-        minIndex = newMinIndex;
-        indexRange = parseInt(indexRangeSlider.value);
-        
-        // Update range info
-        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
-        
-        // Update the point cloud if it exists
-        if (points) {
-            updatePointCloudIndexRange();
-        }
-    });
-
-    indexRangeSlider.addEventListener('input', function() {
-        const newRange = parseInt(this.value);
-        const currentMin = parseInt(minIndexSlider.value);
-        indexRangeValueDisplay.textContent = newRange.toLocaleString();
-        
-        // Ensure min + range doesn't exceed total points
-        if (currentMin + newRange > totalPoints) {
-            minIndexSlider.value = totalPoints - newRange;
-            minIndexValueDisplay.textContent = (totalPoints - newRange).toLocaleString();
-        }
-        
-        minIndex = parseInt(minIndexSlider.value);
-        indexRange = newRange;
-        
-        // Update range info
-        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
-        
-        // Update the point cloud if it exists
-        if (points) {
-            updatePointCloudIndexRange();
-        }
-    });
-    
-    // Function to update slider max values based on total points
-    function updateSliderMaxValues() {
-        // Update total points display
-        totalPointsDiv.textContent = `Total Points: ${totalPoints.toLocaleString()}`;
-        
-        // Update min index slider max
-        minIndexSlider.max = totalPoints.toString();
-        
-        // Update index range slider max
-        const maxRange = totalPoints;
-        indexRangeSlider.max = maxRange.toString();
-        
-        // If current values exceed new max, adjust them
-        if (parseInt(minIndexSlider.value) > totalPoints) {
-            minIndexSlider.value = '0';
-            minIndexValueDisplay.textContent = '0';
-            minIndex = 0;
-        }
-        
-        if (parseInt(indexRangeSlider.value) > maxRange) {
-            indexRangeSlider.value = maxRange.toString();
-            indexRangeValueDisplay.textContent = maxRange.toLocaleString();
-            indexRange = maxRange;
-        }
-        
-        // Update range info
-        rangeInfoDiv.textContent = `Displaying: ${minIndex.toLocaleString()} - ${(minIndex + indexRange).toLocaleString()}`;
-        
-        // Update the point cloud if it exists
-        if (points) {
-            updatePointCloudIndexRange();
-        }
-    }
-    
-    // Store the update function for later use
-    window.updateIndexSliders = updateSliderMaxValues;
-}
 
 // Update point cloud based on index range
 function updatePointCloudIndexRange() {
