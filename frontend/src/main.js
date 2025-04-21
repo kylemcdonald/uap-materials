@@ -14,6 +14,7 @@ let indexRange = 1000000; // Number of points to display
 let selectedRanges = []; // Array to store selected charge-mass ratio ranges
 let filteredPointClouds = []; // Array to store filtered point clouds
 let isShiftPressed = false; // Track if shift key is pressed
+let isOrthographicCamera = false; // Track camera type (false = perspective, true = orthographic)
 
 // Shader code
 const defaultVertexShader = `
@@ -83,7 +84,7 @@ const defaultFragmentShader = `
 // Initialize Three.js scene
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 10000);
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,8 +93,6 @@ function init() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-
-        // No longer needed since we're selecting on the histogram
 
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -106,6 +105,9 @@ function init() {
 
     // Create threshold slider
     createThresholdSlider();
+    
+    // Create camera type slider
+    createCameraTypeSlider();
 
     // Create selection info panel
     createSelectionInfoPanel();
@@ -115,7 +117,20 @@ function init() {
 
 // Handle window resize
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const aspect = window.innerWidth / window.innerHeight;
+    
+    if (isOrthographicCamera) {
+        // Update orthographic camera
+        const frustumSize = 10;
+        camera.left = frustumSize * aspect / -2;
+        camera.right = frustumSize * aspect / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = frustumSize / -2;
+    } else {
+        // Update perspective camera
+        camera.aspect = aspect;
+    }
+    
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -323,6 +338,9 @@ function createHistogram() {
     // Remove existing histogram if any
     d3.select('#histogram').remove();
     
+    // Remove existing tooltip if any
+    d3.select('.tooltip').remove();
+    
     // Create container for histogram
     const histogramDiv = d3.select('body')
         .append('div')
@@ -374,6 +392,190 @@ function createHistogram() {
         .domain([1, d3.max(bins, d => d.length) || 1]) // Use 1 as minimum to avoid log(0)
         .range([height, 0]);
 
+    // Create tooltip
+    const tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('position', 'fixed')
+        .style('visibility', 'hidden')
+        .style('background-color', 'rgba(0, 0, 0, 0.8)')
+        .style('color', 'white')
+        .style('padding', '5px 10px')
+        .style('border-radius', '5px')
+        .style('font-size', '14px')
+        .style('pointer-events', 'none')
+        .style('z-index', '9999')
+        .style('box-shadow', '0 0 5px rgba(0,0,0,0.5)')
+        .style('border', '1px solid rgba(255,255,255,0.3)');
+
+    // Isotopic ratios data for tooltips
+    const isotopicRatios = {
+        1.008: '¹H',
+        2.014: '²H',  // Deuterium
+        3.016: '³H',  // Tritium
+        4.003: '⁴He',
+        6.941: '⁷Li',
+        7.016: '⁷Li',  // Li-7
+        9.012: '⁹Be',
+        10.811: '¹¹B',
+        11.009: '¹¹B',  // B-11
+        12.011: '¹²C',
+        13.003: '¹³C',  // C-13
+        14.007: '¹⁴N',
+        15.000: '¹⁵N',  // N-15
+        15.999: '¹⁶O',
+        17.999: '¹⁸O',  // O-18
+        18.998: '¹⁹F',
+        20.180: '²⁰Ne',
+        22.990: '²³Na',
+        23.985: '²³Na',  // Na-23
+        24.305: '²⁴Mg',
+        25.983: '²⁶Mg',  // Mg-26
+        26.982: '²⁷Al',
+        27.977: '²⁷Al',  // Al-27
+        28.086: '²⁸Si',
+        29.974: '³⁰Si',  // Si-30
+        30.974: '³¹P',
+        31.974: '³¹P',  // P-31
+        32.065: '³²S',
+        33.968: '³⁴S',  // S-34
+        35.453: '³⁵Cl',
+        34.969: '³⁵Cl',  // Cl-35
+        36.966: '³⁷Cl',  // Cl-37
+        39.948: '⁴⁰Ar',
+        39.098: '³⁹K',
+        38.964: '³⁹K',  // K-39
+        40.962: '⁴¹K',  // K-41
+        40.078: '⁴⁰Ca',
+        39.963: '⁴⁰Ca',  // Ca-40
+        43.955: '⁴⁴Ca',  // Ca-44
+        44.956: '⁴⁵Sc',
+        47.867: '⁴⁸Ti',
+        47.948: '⁴⁸Ti',  // Ti-48
+        50.942: '⁵¹V',
+        50.944: '⁵¹V',  // V-51
+        51.996: '⁵²Cr',
+        51.941: '⁵²Cr',  // Cr-52
+        54.938: '⁵⁵Mn',
+        54.938: '⁵⁵Mn',  // Mn-55
+        55.845: '⁵⁶Fe',
+        55.935: '⁵⁶Fe',  // Fe-56
+        58.933: '⁵⁹Co',
+        58.933: '⁵⁹Co',  // Co-59
+        58.693: '⁵⁸Ni',
+        57.935: '⁵⁸Ni',  // Ni-58
+        63.546: '⁶³Cu',
+        62.930: '⁶³Cu',  // Cu-63
+        64.928: '⁶⁵Cu',  // Cu-65
+        65.380: '⁶⁴Zn',
+        63.929: '⁶⁴Zn',  // Zn-64
+        65.926: '⁶⁶Zn',  // Zn-66
+        69.723: '⁶⁹Ga',
+        68.926: '⁶⁹Ga',  // Ga-69
+        70.925: '⁷¹Ga',  // Ga-71
+        72.640: '⁷⁴Ge',
+        73.921: '⁷⁴Ge',  // Ge-74
+        74.922: '⁷⁵As',
+        74.922: '⁷⁵As',  // As-75
+        78.960: '⁸⁰Se',
+        79.917: '⁸⁰Se',  // Se-80
+        79.904: '⁷⁹Br',
+        78.918: '⁷⁹Br',  // Br-79
+        80.916: '⁸¹Br',  // Br-81
+        83.798: '⁸⁴Kr',
+        83.911: '⁸⁴Kr',  // Kr-84
+        85.468: '⁸⁵Rb',
+        84.912: '⁸⁵Rb',  // Rb-85
+        86.909: '⁸⁷Rb',  // Rb-87
+        87.620: '⁸⁸Sr',
+        87.906: '⁸⁸Sr',  // Sr-88
+        88.906: '⁸⁹Y',
+        88.906: '⁸⁹Y',  // Y-89
+        91.224: '⁹⁰Zr',
+        89.905: '⁹⁰Zr',  // Zr-90
+        92.906: '⁹³Nb',
+        92.906: '⁹³Nb',  // Nb-93
+        95.960: '⁹⁸Mo',
+        97.905: '⁹⁸Mo',  // Mo-98
+        98.000: '⁹⁹Tc',
+        101.070: '¹⁰¹Ru',
+        102.906: '¹⁰³Rh',
+        106.420: '¹⁰⁶Pd',
+        107.868: '¹⁰⁷Ag',
+        112.411: '¹¹²Cd',
+        114.818: '¹¹⁵In',
+        118.710: '¹¹⁸Sn',
+        121.760: '¹²¹Sb',
+        127.600: '¹²⁸Te',
+        126.904: '¹²⁷I',
+        131.293: '¹³¹Xe',
+        132.905: '¹³³Cs',
+        137.327: '¹³⁷Ba',
+        138.905: '¹³⁹La',
+        140.116: '¹⁴⁰Ce',
+        140.908: '¹⁴¹Pr',
+        144.242: '¹⁴⁴Nd',
+        145.000: '¹⁴⁵Pm',
+        150.360: '¹⁵⁰Sm',
+        151.964: '¹⁵¹Eu',
+        157.250: '¹⁵⁷Gd',
+        158.925: '¹⁵⁹Tb',
+        162.500: '¹⁶²Dy',
+        164.930: '¹⁶⁵Ho',
+        167.259: '¹⁶⁶Er',
+        168.934: '¹⁶⁹Tm',
+        173.054: '¹⁷²Yb',
+        174.967: '¹⁷⁵Lu',
+        178.490: '¹⁷⁸Hf',
+        180.948: '¹⁸¹Ta',
+        183.840: '¹⁸⁴W',
+        186.207: '¹⁸⁷Re',
+        190.230: '¹⁹⁰Os',
+        192.217: '¹⁹³Ir',
+        195.084: '¹⁹⁵Pt',
+        196.967: '¹⁹⁷Au',
+        200.590: '²⁰⁰Hg',
+        204.383: '²⁰⁵Tl',
+        207.200: '²⁰⁷Pb',
+        208.980: '²⁰⁹Bi',
+        209.000: '²⁰⁹Po',
+        210.000: '²¹⁰At',
+        222.000: '²²²Rn',
+        223.000: '²²³Fr',
+        226.000: '²²⁶Ra',
+        227.000: '²²⁷Ac',
+        232.038: '²³²Th',
+        231.036: '²³¹Pa',
+        238.029: '²³⁸U',
+        237.000: '²³⁷Np',
+        244.000: '²⁴⁴Pu',
+        243.000: '²⁴³Am',
+        247.000: '²⁴⁷Cm',
+        247.000: '²⁴⁷Bk',
+        251.000: '²⁵¹Cf',
+        252.000: '²⁵²Es',
+        257.000: '²⁵⁷Fm',
+        258.000: '²⁵⁸Md',
+        259.000: '²⁵⁹No',
+        262.000: '²⁶²Lr'
+    };
+
+    // Function to find the closest isotopic ratio
+    function findClosestIsotope(mass) {
+        let closestMass = null;
+        let minDiff = Infinity;
+        
+        for (const [isoMass, label] of Object.entries(isotopicRatios)) {
+            const diff = Math.abs(parseFloat(isoMass) - mass);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestMass = isoMass;
+            }
+        }
+        
+        return closestMass ? isotopicRatios[closestMass] : null;
+    }
+
     // Add bars
     svg.selectAll('rect.histogram-bar')
         .data(bins)
@@ -392,6 +594,35 @@ function createHistogram() {
                 addSelectedRange(d.x0, d.x1);
                 event.stopPropagation(); // Prevent other click handlers
             }
+        })
+        .on('mouseover', function(event, d) {
+            const mass = (d.x0 + d.x1) / 2; // Use the middle of the bin
+            const isotope = findClosestIsotope(mass);
+            
+            if (isotope) {
+                console.log(`Showing tooltip for mass ${mass.toFixed(3)}, isotope ${isotope}`);
+                tooltip
+                    .style('visibility', 'visible')
+                    .html(`Mass: ${mass.toFixed(3)}<br>Isotope: ${isotope}`)
+                    .style('left', (event.clientX + 10) + 'px')
+                    .style('top', (event.clientY - 28) + 'px');
+            }
+        })
+        .on('mousemove', function(event, d) {
+            const mass = (d.x0 + d.x1) / 2; // Use the middle of the bin
+            const isotope = findClosestIsotope(mass);
+            
+            if (isotope) {
+                tooltip
+                    .style('visibility', 'visible')
+                    .html(`Mass: ${mass.toFixed(3)}<br>Isotope: ${isotope}`)
+                    .style('left', (event.clientX + 10) + 'px')
+                    .style('top', (event.clientY - 28) + 'px');
+            }
+        })
+        .on('mouseout', function() {
+            console.log('Hiding tooltip');
+            tooltip.style('visibility', 'hidden');
         });
 
     // Add highlight for selected range
@@ -444,6 +675,30 @@ function createHistogram() {
     svg.append("g")
         .attr("class", "brush")
         .call(brush);
+        
+    // Add direct event listener to the histogram container
+    histogramDiv.on('mousemove', function(event) {
+        // Get the mouse position relative to the SVG
+        const svgRect = svg.node().getBoundingClientRect();
+        const mouseX = event.clientX - svgRect.left - margin.left;
+        
+        // Convert to data domain
+        const mass = x.invert(mouseX);
+        
+        // Find the closest isotope
+        const isotope = findClosestIsotope(mass);
+        
+        if (isotope) {
+            tooltip
+                .style('visibility', 'visible')
+                .html(`Mass: ${mass.toFixed(3)}<br>Isotope: ${isotope}`)
+                .style('left', (event.clientX + 10) + 'px')
+                .style('top', (event.clientY - 28) + 'px');
+        }
+    })
+    .on('mouseout', function() {
+        tooltip.style('visibility', 'hidden');
+    });
         
     // Brush event handler
     function brushed(event) {
@@ -878,9 +1133,8 @@ function addSelectedRange(min, max) {
         return;
     }
     
-    // Generate a random color for this range
-    const hue = Math.random();
-    const color = new THREE.Color().setHSL(hue, 1.0, 0.5);
+    // Get color from d3.schemeCategory10 based on the current number of ranges
+    const color = new THREE.Color(d3.schemeCategory10[selectedRanges.length % 10]);
     const colorArray = [color.r, color.g, color.b];
     
     // Add the new range
@@ -1087,6 +1341,177 @@ function updatePointCloudIndexRange() {
     // Update the shader uniforms
     points.material.uniforms.minIndex.value = minIndex;
     points.material.uniforms.maxIndex.value = minIndex + indexRange;
+}
+
+// Create camera type slider
+function createCameraTypeSlider() {
+    // Get the controls container
+    const controlsDiv = document.getElementById('controls');
+    if (!controlsDiv) return;
+
+    // Create a container for the buttons at the top
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.marginBottom = '20px';
+    buttonContainer.style.paddingBottom = '10px';
+    buttonContainer.style.borderBottom = '1px solid rgba(255, 255, 255, 0.2)';
+    controlsDiv.insertBefore(buttonContainer, controlsDiv.firstChild);
+
+    // Create camera type toggle button
+    const cameraTypeButton = document.createElement('button');
+    cameraTypeButton.textContent = 'Perspective';
+    cameraTypeButton.style.padding = '5px 10px';
+    cameraTypeButton.style.backgroundColor = '#4CAF50';
+    cameraTypeButton.style.color = 'white';
+    cameraTypeButton.style.border = 'none';
+    cameraTypeButton.style.borderRadius = '4px';
+    cameraTypeButton.style.cursor = 'pointer';
+    cameraTypeButton.style.fontWeight = 'bold';
+    buttonContainer.appendChild(cameraTypeButton);
+
+    // Create export PLY button
+    const exportButton = document.createElement('button');
+    exportButton.textContent = 'Export PLY';
+    exportButton.style.display = 'inline-block';
+    exportButton.style.marginLeft = '10px';
+    exportButton.style.padding = '5px 10px';
+    exportButton.style.backgroundColor = '#4CAF50';
+    exportButton.style.color = 'white';
+    exportButton.style.border = 'none';
+    exportButton.style.borderRadius = '4px';
+    exportButton.style.cursor = 'pointer';
+    exportButton.addEventListener('click', exportToPLY);
+    buttonContainer.appendChild(exportButton);
+
+    // Add event listener for camera type button
+    cameraTypeButton.addEventListener('click', function() {
+        isOrthographicCamera = !isOrthographicCamera;
+        cameraTypeButton.textContent = isOrthographicCamera ? 'Orthographic' : 'Perspective';
+        cameraTypeButton.style.backgroundColor = isOrthographicCamera ? '#2196F3' : '#4CAF50';
+        
+        // Get current camera position and target
+        const position = camera.position.clone();
+        const target = controls.target.clone();
+        
+        // Create new camera based on selected type
+        if (isOrthographicCamera) {
+            // Calculate orthographic camera parameters
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 10;
+            const orthoCamera = new THREE.OrthographicCamera(
+                frustumSize * aspect / -2,
+                frustumSize * aspect / 2,
+                frustumSize / 2,
+                frustumSize / -2,
+                0.1,
+                1000
+            );
+            
+            // Replace the old camera with the new one
+            scene.remove(camera);
+            camera = orthoCamera;
+            scene.add(camera);
+            
+            // Update controls to use the new camera
+            controls.object = camera;
+        } else {
+            // Create perspective camera
+            const perspectiveCamera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            
+            // Replace the old camera with the new one
+            scene.remove(camera);
+            camera = perspectiveCamera;
+            scene.add(camera);
+            
+            // Update controls to use the new camera
+            controls.object = camera;
+        }
+        
+        // Restore camera position and target
+        camera.position.copy(position);
+        controls.target.copy(target);
+        
+        // Update camera
+        camera.updateProjectionMatrix();
+        controls.update();
+    });
+}
+
+// Function to export visible points to PLY format
+function exportToPLY() {
+    if (!points) {
+        alert('No point cloud loaded');
+        return;
+    }
+
+    // Get the geometry and attributes
+    const geometry = points.geometry;
+    const positions = geometry.attributes.position.array;
+    const chargeMassRatios = geometry.attributes.chargeMassRatio.array;
+    const indices = geometry.attributes.index.array;
+    
+    // Get the current threshold values
+    const minThreshold = points.material.uniforms.minThreshold.value;
+    const maxThreshold = points.material.uniforms.maxThreshold.value;
+    const minIndex = points.material.uniforms.minIndex.value;
+    const maxIndex = points.material.uniforms.maxIndex.value;
+    
+    // Count visible points
+    let visibleCount = 0;
+    const visibleIndices = [];
+    
+    for (let i = 0; i < chargeMassRatios.length; i++) {
+        const cmr = chargeMassRatios[i];
+        const idx = indices[i];
+        
+        // Check if point is within threshold and index range
+        if (cmr >= minThreshold && cmr <= maxThreshold && idx >= minIndex && idx < maxIndex) {
+            visibleCount++;
+            visibleIndices.push(i);
+        }
+    }
+    
+    if (visibleCount === 0) {
+        alert('No visible points to export');
+        return;
+    }
+    
+    // Create PLY header
+    let plyContent = 'ply\n';
+    plyContent += 'format ascii 1.0\n';
+    plyContent += `element vertex ${visibleCount}\n`;
+    plyContent += 'property float x\n';
+    plyContent += 'property float y\n';
+    plyContent += 'property float z\n';
+    plyContent += 'property float charge_mass_ratio\n';
+    plyContent += 'end_header\n';
+    
+    // Add point data
+    for (const i of visibleIndices) {
+        const x = positions[i * 3];
+        const y = positions[i * 3 + 1];
+        const z = positions[i * 3 + 2];
+        const cmr = chargeMassRatios[i];
+        
+        plyContent += `${x} ${y} ${z} ${cmr}\n`;
+    }
+    
+    // Create download link
+    const blob = new Blob([plyContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'point_cloud.ply';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log(`Exported ${visibleCount} points to PLY file`);
 }
 
 // Initialize and start animation
