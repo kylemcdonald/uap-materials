@@ -148,22 +148,38 @@ def export_to_xyz(pos_data, output_file, num_atoms=None):
     print(f"XYZ file writing complete in {write_elapsed:.2f} seconds")
     print(f"Total XYZ conversion complete in {total_elapsed:.2f} seconds")
 
-def create_mass_spectrum(pos_data, output_file):
-    """Create a histogram of mass-to-charge ratios and save as PNG.
+def generate_mass_spectrum(pos_data, min_mass=0, max_mass=125, mass_resolution=0.01):
+    """Generate a histogram of mass-to-charge ratios.
     
     Args:
         pos_data: NumPy array containing the ion data
+        min_mass: Minimum mass-to-charge ratio to include in the spectrum
+        max_mass: Maximum mass-to-charge ratio to include in the spectrum
+        mass_resolution: Resolution of the mass spectrum in Da (default: 0.01)
+        
+    Returns:
+        tuple: (bin_centers, hist) containing the mass-to-charge ratios and their counts
+    """
+    # Calculate number of bins based on resolution
+    num_bins = int((max_mass - min_mass) / mass_resolution)
+    
+    # Compute histogram
+    hist, bin_edges = np.histogram(pos_data[:, 3], bins=num_bins, range=(min_mass, max_mass), density=False)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    return bin_centers, hist
+
+def visualize_mass_spectrum(bin_centers, hist, output_file, elements_in_image=None):
+    """Visualize a mass spectrum and save as PNG.
+    
+    Args:
+        bin_centers: Array of mass-to-charge ratios
+        hist: Array of counts for each mass-to-charge ratio
         output_file: Path to save the PNG file
+        elements_in_image: Set of element symbols to include in the visualization
     """
     plt.style.use('dark_background')
     plt.figure(figsize=(12, 2))
-    
-    # Pre-compute histogram
-    element_min = 0
-    element_max = 125
-    element_range = element_max - element_min
-    hist, bin_edges = np.histogram(pos_data[:, 3], bins=element_range*20, range=(element_min, element_max), density=False)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     
     # Save histogram data as numpy array
     histogram_data = np.column_stack((bin_centers, hist))
@@ -171,11 +187,12 @@ def create_mass_spectrum(pos_data, output_file):
     np.save(histogram_file, histogram_data)
     
     # Plot histogram with logarithmic scale
-    plt.bar(bin_centers, hist, width=np.diff(bin_edges), alpha=0.7, color='white')
+    plt.bar(bin_centers, hist, width=np.diff(bin_centers)[0], alpha=0.7, color='white')
     plt.yscale('log')
     
-    # Elements identified in the image (ignoring compounds/radicals like OH, AlO, etc.)
-    elements_in_image = {'N', 'Al', 'Mg', 'Si', 'Fe', 'B', 'C', 'O', 'P', 'Cl', 'Mn', 'Cu', 'Ga', 'Ru', 'Ca', 'Cr', 'Co', 'Ni', 'K'}
+    # Default elements to include if none specified
+    if elements_in_image is None:
+        elements_in_image = {'N', 'Al', 'Mg', 'Si', 'Fe', 'B', 'C', 'O', 'P', 'Cl', 'Mn', 'Cu', 'Ga', 'Ru', 'Ca', 'Cr', 'Co', 'Ni', 'K'}
 
     # Filter the dictionary
     filtered_isotopic_ratios = {
@@ -186,7 +203,7 @@ def create_mass_spectrum(pos_data, output_file):
     
     # Add element labels with isotope numbers
     for mass, (element, isotope_label) in filtered_isotopic_ratios.items():
-        if element_min <= mass <= element_max:  # Only consider elements within our plot range
+        if bin_centers[0] <= mass <= bin_centers[-1]:  # Only consider elements within our plot range
             # Find the closest bin center
             bin_idx = np.argmin(np.abs(bin_centers - mass))
             # Add text at the top of the histogram at this position
@@ -194,13 +211,26 @@ def create_mass_spectrum(pos_data, output_file):
                     ha='center', va='bottom',
                     fontsize=8, color='white')
     
-    plt.xlim(element_min, element_max)
+    plt.xlim(bin_centers[0], bin_centers[-1])
     plt.xlabel('Mass-to-Charge Ratio (Da)', color='white')
     plt.ylabel('Count (log scale)', color='white')
     plt.grid(True, alpha=0.3, color='white')
     plt.tick_params(colors='white')
     plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='black')
     plt.close()
+
+def create_mass_spectrum(pos_data, output_file, min_mass=0, max_mass=125, mass_resolution=0.01):
+    """Create a histogram of mass-to-charge ratios and save as PNG.
+    
+    Args:
+        pos_data: NumPy array containing the ion data
+        output_file: Path to save the PNG file
+        min_mass: Minimum mass-to-charge ratio to include in the spectrum
+        max_mass: Maximum mass-to-charge ratio to include in the spectrum
+        mass_resolution: Resolution of the mass spectrum in Da (default: 0.01)
+    """
+    bin_centers, hist = generate_mass_spectrum(pos_data, min_mass, max_mass, mass_resolution)
+    visualize_mass_spectrum(bin_centers, hist, output_file)
 
 def print_bounding_box(pos_data):
     """Print the bounding box for x, y, and z coordinates.
@@ -225,6 +255,9 @@ if __name__ == "__main__":
     parser.add_argument('pos_file', help='Path to the POS file to convert')
     parser.add_argument('-n', '--num-atoms', type=int, help='Number of atoms to process (optional)')
     parser.add_argument('--xyz', action='store_true', help='Save XYZ file')
+    parser.add_argument('--min-mass', type=float, default=0, help='Minimum mass-to-charge ratio for spectrum (default: 0)')
+    parser.add_argument('--max-mass', type=float, default=125, help='Maximum mass-to-charge ratio for spectrum (default: 125)')
+    parser.add_argument('--mass-resolution', type=float, default=0.01, help='Mass spectrum resolution in Da (default: 0.01)')
     
     args = parser.parse_args()
 
@@ -260,7 +293,7 @@ if __name__ == "__main__":
         # Create mass spectrum
         filename = os.path.basename(args.pos_file)
         spectrum_file = os.path.join(MASS_SPECTRUM_DIR, os.path.splitext(filename)[0] + '_mass_spectrum.png')
-        create_mass_spectrum(pos_data, spectrum_file)
+        create_mass_spectrum(pos_data, spectrum_file, args.min_mass, args.max_mass, args.mass_resolution)
         print(f"Mass spectrum saved to {spectrum_file}")
         
         # Print bounding box
