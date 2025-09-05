@@ -1,26 +1,39 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.spatial import cKDTree
+import faiss
 from pos_tool import read_pos
 
 def find_nearest_neighbors(points, query_points, radius):
     """Find all points within a given radius of each query point."""
-    tree = cKDTree(points)
+    # Convert points to float32 for FAISS
+    points = points.astype('float32')
+    query_points = query_points.astype('float32')
+    
+    # Create FAISS index
+    dimension = points.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(points)
+    
+    # Find all points within radius
+    # Note: FAISS returns squared distances, so we use radius^2
+    radius_squared = radius * radius
     neighbors = []
     distances = []
     
     for query_point in query_points:
-        # Find all points within radius
-        indices = tree.query_ball_point(query_point, radius)
-        neighbors.append(indices)
+        # Reshape query point for FAISS
+        query_point = query_point.reshape(1, -1)
         
-        # Calculate distances to neighbors
-        if len(indices) > 0:
-            dist = np.sqrt(np.sum((points[indices] - query_point)**2, axis=1))
-            distances.append(dist)
-        else:
-            distances.append(np.array([]))
+        # Search for all points within radius
+        lims, D, I = index.range_search(query_point, radius_squared)
+        
+        # Convert to numpy arrays
+        indices = I[0:lims[1]]
+        dists = np.sqrt(D[0:lims[1]])  # Convert squared distances to actual distances
+        
+        neighbors.append(indices)
+        distances.append(dists)
     
     return neighbors, distances
 
