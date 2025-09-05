@@ -1,0 +1,38 @@
+{
+    "alkali_metals": {
+        "elements": ["Li", "Na", "K", "Rb", "Cs", "Fr"],
+        "color": "#CC6666"
+    },
+    "alkaline_earth_metals": {
+        "elements": ["Be", "Mg", "Ca", "Sr", "Ba", "Ra"],
+        "color": "#CCB38A"
+    },
+    "transition_metals": {
+        "elements": ["Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn"],
+        "color": "#CC9999"
+    },
+    "post_transition_metals": {
+        "elements": ["Al", "Ga", "In", "Sn", "Tl", "Pb", "Bi", "Nh", "Fl", "Mc", "Lv"],
+        "color": "#808080"
+    },
+    "metalloids": {
+        "elements": ["B", "Si", "Ge", "As", "Sb", "Te", "Po"],
+        "color": "#78C878"
+    },
+    "nonmetals": {
+        "elements": ["H", "C", "N", "O", "F", "P", "S", "Cl", "Se", "Br", "I", "At", "Ts"],
+        "color": "#80CC80"
+    },
+    "noble_gases": {
+        "elements": ["He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"],
+        "color": "#99CCCC"
+    },
+    "lanthanides": {
+        "elements": ["La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu"],
+        "color": "#CC99CC"
+    },
+    "actinides": {
+        "elements": ["Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr"],
+        "color": "#CC6699"
+    }
+} 

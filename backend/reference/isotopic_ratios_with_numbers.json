@@ -1,0 +1,1430 @@
+{
+  "1.0078250319": {
+    "symbol": "H",
+    "label": "H1",
+    "abundance": 99.9855,
+    "is_most_abundant": true
+  },
+  "4.00260325413": {
+    "symbol": "He",
+    "label": "He4",
+    "abundance": 99.99980000000001,
+    "is_most_abundant": true
+  },
+  "6.0151228874": {
+    "symbol": "Li",
+    "label": "Li6",
+    "abundance": 4.8500000000000005,
+    "is_most_abundant": false
+  },
+  "7.016003434": {
+    "symbol": "Li",
+    "label": "Li7",
+    "abundance": 95.15,
+    "is_most_abundant": true
+  },
+  "9.01218306": {
+    "symbol": "Be",
+    "label": "Be9",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "10.012936862": {
+    "symbol": "B",
+    "label": "B10",
+    "abundance": 19.650000000000002,
+    "is_most_abundant": false
+  },
+  "11.009305167": {
+    "symbol": "B",
+    "label": "B11",
+    "abundance": 80.35000000000001,
+    "is_most_abundant": true
+  },
+  "12.0": {
+    "symbol": "C",
+    "label": "C12",
+    "abundance": 98.94,
+    "is_most_abundant": true
+  },
+  "13.00335483534": {
+    "symbol": "C",
+    "label": "C13",
+    "abundance": 1.0599999999999998,
+    "is_most_abundant": false
+  },
+  "14.00307400425": {
+    "symbol": "N",
+    "label": "N14",
+    "abundance": 99.6337,
+    "is_most_abundant": true
+  },
+  "15.9949146193": {
+    "symbol": "O",
+    "label": "O16",
+    "abundance": 99.75714963572446,
+    "is_most_abundant": true
+  },
+  "18.9984031621": {
+    "symbol": "F",
+    "label": "F19",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "19.9924401753": {
+    "symbol": "Ne",
+    "label": "Ne20",
+    "abundance": 90.48,
+    "is_most_abundant": true
+  },
+  "21.991385114": {
+    "symbol": "Ne",
+    "label": "Ne22",
+    "abundance": 9.25,
+    "is_most_abundant": false
+  },
+  "22.989769282": {
+    "symbol": "Na",
+    "label": "Na23",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "23.985041689": {
+    "symbol": "Mg",
+    "label": "Mg24",
+    "abundance": 78.96421035789642,
+    "is_most_abundant": true
+  },
+  "24.98583697": {
+    "symbol": "Mg",
+    "label": "Mg25",
+    "abundance": 10.01089989100109,
+    "is_most_abundant": false
+  },
+  "25.98259297": {
+    "symbol": "Mg",
+    "label": "Mg26",
+    "abundance": 11.024889751102489,
+    "is_most_abundant": false
+  },
+  "26.98153841": {
+    "symbol": "Al",
+    "label": "Al27",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "27.9769265344": {
+    "symbol": "Si",
+    "label": "Si28",
+    "abundance": 92.25450000000001,
+    "is_most_abundant": true
+  },
+  "28.9764946643": {
+    "symbol": "Si",
+    "label": "Si29",
+    "abundance": 4.672000000000001,
+    "is_most_abundant": false
+  },
+  "29.973770137": {
+    "symbol": "Si",
+    "label": "Si30",
+    "abundance": 3.0735,
+    "is_most_abundant": false
+  },
+  "30.9737619977": {
+    "symbol": "P",
+    "label": "P31",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "31.9720711735": {
+    "symbol": "S",
+    "label": "S32",
+    "abundance": 94.855881064626,
+    "is_most_abundant": true
+  },
+  "33.96786701": {
+    "symbol": "S",
+    "label": "S34",
+    "abundance": 4.3652706467801,
+    "is_most_abundant": false
+  },
+  "34.96885269": {
+    "symbol": "Cl",
+    "label": "Cl35",
+    "abundance": 75.8,
+    "is_most_abundant": true
+  },
+  "36.96590257": {
+    "symbol": "Cl",
+    "label": "Cl37",
+    "abundance": 24.2,
+    "is_most_abundant": false
+  },
+  "39.962383122": {
+    "symbol": "Ar",
+    "label": "Ar40",
+    "abundance": 99.6035,
+    "is_most_abundant": true
+  },
+  "38.963706485": {
+    "symbol": "K",
+    "label": "K39",
+    "abundance": 93.2581,
+    "is_most_abundant": true
+  },
+  "40.961825256": {
+    "symbol": "K",
+    "label": "K41",
+    "abundance": 6.7302,
+    "is_most_abundant": false
+  },
+  "39.962590851": {
+    "symbol": "Ca",
+    "label": "Ca40",
+    "abundance": 96.941,
+    "is_most_abundant": true
+  },
+  "43.9554815": {
+    "symbol": "Ca",
+    "label": "Ca44",
+    "abundance": 2.086,
+    "is_most_abundant": false
+  },
+  "44.9559071": {
+    "symbol": "Sc",
+    "label": "Sc45",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "45.95262636": {
+    "symbol": "Ti",
+    "label": "Ti46",
+    "abundance": 8.250000000000002,
+    "is_most_abundant": false
+  },
+  "46.95175749": {
+    "symbol": "Ti",
+    "label": "Ti47",
+    "abundance": 7.44,
+    "is_most_abundant": false
+  },
+  "47.94794068": {
+    "symbol": "Ti",
+    "label": "Ti48",
+    "abundance": 73.72000000000001,
+    "is_most_abundant": true
+  },
+  "48.94786439": {
+    "symbol": "Ti",
+    "label": "Ti49",
+    "abundance": 5.410000000000001,
+    "is_most_abundant": false
+  },
+  "49.94478562": {
+    "symbol": "Ti",
+    "label": "Ti50",
+    "abundance": 5.180000000000001,
+    "is_most_abundant": false
+  },
+  "50.94395766": {
+    "symbol": "V",
+    "label": "V51",
+    "abundance": 99.75,
+    "is_most_abundant": true
+  },
+  "49.94604221": {
+    "symbol": "Cr",
+    "label": "Cr50",
+    "abundance": 4.345000000000001,
+    "is_most_abundant": false
+  },
+  "51.94050471": {
+    "symbol": "Cr",
+    "label": "Cr52",
+    "abundance": 83.789,
+    "is_most_abundant": true
+  },
+  "52.9406463": {
+    "symbol": "Cr",
+    "label": "Cr53",
+    "abundance": 9.501,
+    "is_most_abundant": false
+  },
+  "53.93887736": {
+    "symbol": "Cr",
+    "label": "Cr54",
+    "abundance": 2.365,
+    "is_most_abundant": false
+  },
+  "54.93804304": {
+    "symbol": "Mn",
+    "label": "Mn55",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "53.9396082": {
+    "symbol": "Fe",
+    "label": "Fe54",
+    "abundance": 5.845000000000001,
+    "is_most_abundant": false
+  },
+  "55.93493554": {
+    "symbol": "Fe",
+    "label": "Fe56",
+    "abundance": 91.754,
+    "is_most_abundant": true
+  },
+  "56.93539195": {
+    "symbol": "Fe",
+    "label": "Fe57",
+    "abundance": 2.119,
+    "is_most_abundant": false
+  },
+  "58.9331935": {
+    "symbol": "Co",
+    "label": "Co59",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "57.9353417": {
+    "symbol": "Ni",
+    "label": "Ni58",
+    "abundance": 68.0769,
+    "is_most_abundant": true
+  },
+  "59.9307851": {
+    "symbol": "Ni",
+    "label": "Ni60",
+    "abundance": 26.2231,
+    "is_most_abundant": false
+  },
+  "60.9310548": {
+    "symbol": "Ni",
+    "label": "Ni61",
+    "abundance": 1.1399,
+    "is_most_abundant": false
+  },
+  "61.9283448": {
+    "symbol": "Ni",
+    "label": "Ni62",
+    "abundance": 3.6345,
+    "is_most_abundant": false
+  },
+  "62.9295971": {
+    "symbol": "Cu",
+    "label": "Cu63",
+    "abundance": 69.15,
+    "is_most_abundant": true
+  },
+  "64.9277895": {
+    "symbol": "Cu",
+    "label": "Cu65",
+    "abundance": 30.85,
+    "is_most_abundant": false
+  },
+  "63.9291418": {
+    "symbol": "Zn",
+    "label": "Zn64",
+    "abundance": 49.17,
+    "is_most_abundant": true
+  },
+  "65.9260336": {
+    "symbol": "Zn",
+    "label": "Zn66",
+    "abundance": 27.73,
+    "is_most_abundant": false
+  },
+  "66.9271274": {
+    "symbol": "Zn",
+    "label": "Zn67",
+    "abundance": 4.04,
+    "is_most_abundant": false
+  },
+  "67.9248442": {
+    "symbol": "Zn",
+    "label": "Zn68",
+    "abundance": 18.45,
+    "is_most_abundant": false
+  },
+  "68.9255735": {
+    "symbol": "Ga",
+    "label": "Ga69",
+    "abundance": 60.108,
+    "is_most_abundant": true
+  },
+  "70.9247026": {
+    "symbol": "Ga",
+    "label": "Ga71",
+    "abundance": 39.892,
+    "is_most_abundant": false
+  },
+  "69.9242485": {
+    "symbol": "Ge",
+    "label": "Ge70",
+    "abundance": 20.52,
+    "is_most_abundant": false
+  },
+  "71.92207582": {
+    "symbol": "Ge",
+    "label": "Ge72",
+    "abundance": 27.450000000000003,
+    "is_most_abundant": false
+  },
+  "72.92345895": {
+    "symbol": "Ge",
+    "label": "Ge73",
+    "abundance": 7.76,
+    "is_most_abundant": false
+  },
+  "73.921177761": {
+    "symbol": "Ge",
+    "label": "Ge74",
+    "abundance": 36.52,
+    "is_most_abundant": true
+  },
+  "75.921402725": {
+    "symbol": "Ge",
+    "label": "Ge76",
+    "abundance": 7.75,
+    "is_most_abundant": false
+  },
+  "74.9215946": {
+    "symbol": "As",
+    "label": "As75",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "75.919213703": {
+    "symbol": "Se",
+    "label": "Se76",
+    "abundance": 9.229999999999999,
+    "is_most_abundant": false
+  },
+  "76.91991415": {
+    "symbol": "Se",
+    "label": "Se77",
+    "abundance": 7.6,
+    "is_most_abundant": false
+  },
+  "77.91730924": {
+    "symbol": "Se",
+    "label": "Se78",
+    "abundance": 23.69,
+    "is_most_abundant": false
+  },
+  "79.9165218": {
+    "symbol": "Se",
+    "label": "Se80",
+    "abundance": 49.8,
+    "is_most_abundant": true
+  },
+  "81.9166995": {
+    "symbol": "Se",
+    "label": "Se82",
+    "abundance": 8.82,
+    "is_most_abundant": false
+  },
+  "78.9183376": {
+    "symbol": "Br",
+    "label": "Br79",
+    "abundance": 50.64999999999999,
+    "is_most_abundant": true
+  },
+  "80.9162882": {
+    "symbol": "Br",
+    "label": "Br81",
+    "abundance": 49.35,
+    "is_most_abundant": false
+  },
+  "79.9163779": {
+    "symbol": "Kr",
+    "label": "Kr80",
+    "abundance": 2.286,
+    "is_most_abundant": false
+  },
+  "81.913481154": {
+    "symbol": "Kr",
+    "label": "Kr82",
+    "abundance": 11.593,
+    "is_most_abundant": false
+  },
+  "82.914126517": {
+    "symbol": "Kr",
+    "label": "Kr83",
+    "abundance": 11.5,
+    "is_most_abundant": false
+  },
+  "83.911497727": {
+    "symbol": "Kr",
+    "label": "Kr84",
+    "abundance": 56.987,
+    "is_most_abundant": true
+  },
+  "85.910610625": {
+    "symbol": "Kr",
+    "label": "Kr86",
+    "abundance": 17.279,
+    "is_most_abundant": false
+  },
+  "84.911789736": {
+    "symbol": "Rb",
+    "label": "Rb85",
+    "abundance": 72.17,
+    "is_most_abundant": true
+  },
+  "86.909180529": {
+    "symbol": "Rb",
+    "label": "Rb87",
+    "abundance": 27.83,
+    "is_most_abundant": false
+  },
+  "85.909260725": {
+    "symbol": "Sr",
+    "label": "Sr86",
+    "abundance": 9.86,
+    "is_most_abundant": false
+  },
+  "86.908877495": {
+    "symbol": "Sr",
+    "label": "Sr87",
+    "abundance": 7.000000000000001,
+    "is_most_abundant": false
+  },
+  "87.905612254": {
+    "symbol": "Sr",
+    "label": "Sr88",
+    "abundance": 82.58,
+    "is_most_abundant": true
+  },
+  "88.9058382": {
+    "symbol": "Y",
+    "label": "Y89",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "89.90469876": {
+    "symbol": "Zr",
+    "label": "Zr90",
+    "abundance": 51.449999999999996,
+    "is_most_abundant": true
+  },
+  "90.90564021": {
+    "symbol": "Zr",
+    "label": "Zr91",
+    "abundance": 11.219999999999999,
+    "is_most_abundant": false
+  },
+  "91.90503534": {
+    "symbol": "Zr",
+    "label": "Zr92",
+    "abundance": 17.150000000000002,
+    "is_most_abundant": false
+  },
+  "93.90631252": {
+    "symbol": "Zr",
+    "label": "Zr94",
+    "abundance": 17.380000000000003,
+    "is_most_abundant": false
+  },
+  "95.90827762": {
+    "symbol": "Zr",
+    "label": "Zr96",
+    "abundance": 2.8000000000000003,
+    "is_most_abundant": false
+  },
+  "92.9063732": {
+    "symbol": "Nb",
+    "label": "Nb93",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "91.90680715": {
+    "symbol": "Mo",
+    "label": "Mo92",
+    "abundance": 14.649000000000001,
+    "is_most_abundant": false
+  },
+  "93.90508359": {
+    "symbol": "Mo",
+    "label": "Mo94",
+    "abundance": 9.187,
+    "is_most_abundant": false
+  },
+  "94.90583744": {
+    "symbol": "Mo",
+    "label": "Mo95",
+    "abundance": 15.873000000000001,
+    "is_most_abundant": false
+  },
+  "95.90467477": {
+    "symbol": "Mo",
+    "label": "Mo96",
+    "abundance": 16.673,
+    "is_most_abundant": false
+  },
+  "96.9060169": {
+    "symbol": "Mo",
+    "label": "Mo97",
+    "abundance": 9.582,
+    "is_most_abundant": false
+  },
+  "97.90540361": {
+    "symbol": "Mo",
+    "label": "Mo98",
+    "abundance": 24.291999999999998,
+    "is_most_abundant": true
+  },
+  "99.907468": {
+    "symbol": "Mo",
+    "label": "Mo100",
+    "abundance": 9.744,
+    "is_most_abundant": false
+  },
+  "95.90758891": {
+    "symbol": "Ru",
+    "label": "Ru96",
+    "abundance": 5.54,
+    "is_most_abundant": false
+  },
+  "97.905287": {
+    "symbol": "Ru",
+    "label": "Ru98",
+    "abundance": 1.87,
+    "is_most_abundant": false
+  },
+  "98.9059303": {
+    "symbol": "Ru",
+    "label": "Ru99",
+    "abundance": 12.76,
+    "is_most_abundant": false
+  },
+  "99.9042105": {
+    "symbol": "Ru",
+    "label": "Ru100",
+    "abundance": 12.6,
+    "is_most_abundant": false
+  },
+  "100.9055731": {
+    "symbol": "Ru",
+    "label": "Ru101",
+    "abundance": 17.06,
+    "is_most_abundant": false
+  },
+  "101.9043403": {
+    "symbol": "Ru",
+    "label": "Ru102",
+    "abundance": 31.55,
+    "is_most_abundant": true
+  },
+  "103.9054253": {
+    "symbol": "Ru",
+    "label": "Ru104",
+    "abundance": 18.62,
+    "is_most_abundant": false
+  },
+  "102.9054941": {
+    "symbol": "Rh",
+    "label": "Rh103",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "101.9056323": {
+    "symbol": "Pd",
+    "label": "Pd102",
+    "abundance": 1.02,
+    "is_most_abundant": false
+  },
+  "103.9040304": {
+    "symbol": "Pd",
+    "label": "Pd104",
+    "abundance": 11.14,
+    "is_most_abundant": false
+  },
+  "104.9050795": {
+    "symbol": "Pd",
+    "label": "Pd105",
+    "abundance": 22.33,
+    "is_most_abundant": false
+  },
+  "105.9034803": {
+    "symbol": "Pd",
+    "label": "Pd106",
+    "abundance": 27.33,
+    "is_most_abundant": true
+  },
+  "107.9038918": {
+    "symbol": "Pd",
+    "label": "Pd108",
+    "abundance": 26.46,
+    "is_most_abundant": false
+  },
+  "109.9051729": {
+    "symbol": "Pd",
+    "label": "Pd110",
+    "abundance": 11.72,
+    "is_most_abundant": false
+  },
+  "106.9050915": {
+    "symbol": "Ag",
+    "label": "Ag107",
+    "abundance": 51.839,
+    "is_most_abundant": true
+  },
+  "108.9047558": {
+    "symbol": "Ag",
+    "label": "Ag109",
+    "abundance": 48.161,
+    "is_most_abundant": false
+  },
+  "105.9064598": {
+    "symbol": "Cd",
+    "label": "Cd106",
+    "abundance": 1.2449999999999999,
+    "is_most_abundant": false
+  },
+  "109.9030075": {
+    "symbol": "Cd",
+    "label": "Cd110",
+    "abundance": 12.47,
+    "is_most_abundant": false
+  },
+  "110.9041838": {
+    "symbol": "Cd",
+    "label": "Cd111",
+    "abundance": 12.795000000000002,
+    "is_most_abundant": false
+  },
+  "111.9027639": {
+    "symbol": "Cd",
+    "label": "Cd112",
+    "abundance": 24.108999999999998,
+    "is_most_abundant": false
+  },
+  "112.90440811": {
+    "symbol": "Cd",
+    "label": "Cd113",
+    "abundance": 12.227,
+    "is_most_abundant": false
+  },
+  "113.903365": {
+    "symbol": "Cd",
+    "label": "Cd114",
+    "abundance": 28.754,
+    "is_most_abundant": true
+  },
+  "115.90476323": {
+    "symbol": "Cd",
+    "label": "Cd116",
+    "abundance": 7.5120000000000005,
+    "is_most_abundant": false
+  },
+  "112.90406045": {
+    "symbol": "In",
+    "label": "In113",
+    "abundance": 4.281,
+    "is_most_abundant": false
+  },
+  "114.903878773": {
+    "symbol": "In",
+    "label": "In115",
+    "abundance": 95.719,
+    "is_most_abundant": true
+  },
+  "115.90174283": {
+    "symbol": "Sn",
+    "label": "Sn116",
+    "abundance": 14.540000000000003,
+    "is_most_abundant": false
+  },
+  "116.902954": {
+    "symbol": "Sn",
+    "label": "Sn117",
+    "abundance": 7.680000000000001,
+    "is_most_abundant": false
+  },
+  "117.9016066": {
+    "symbol": "Sn",
+    "label": "Sn118",
+    "abundance": 24.220000000000002,
+    "is_most_abundant": false
+  },
+  "118.9033113": {
+    "symbol": "Sn",
+    "label": "Sn119",
+    "abundance": 8.590000000000002,
+    "is_most_abundant": false
+  },
+  "119.9022026": {
+    "symbol": "Sn",
+    "label": "Sn120",
+    "abundance": 32.580000000000005,
+    "is_most_abundant": true
+  },
+  "121.9034455": {
+    "symbol": "Sn",
+    "label": "Sn122",
+    "abundance": 4.630000000000001,
+    "is_most_abundant": false
+  },
+  "123.9052796": {
+    "symbol": "Sn",
+    "label": "Sn124",
+    "abundance": 5.790000000000001,
+    "is_most_abundant": false
+  },
+  "120.9038114": {
+    "symbol": "Sb",
+    "label": "Sb121",
+    "abundance": 57.21000000000001,
+    "is_most_abundant": true
+  },
+  "122.9042153": {
+    "symbol": "Sb",
+    "label": "Sb123",
+    "abundance": 42.79,
+    "is_most_abundant": false
+  },
+  "121.9030447": {
+    "symbol": "Te",
+    "label": "Te122",
+    "abundance": 2.55,
+    "is_most_abundant": false
+  },
+  "123.9028183": {
+    "symbol": "Te",
+    "label": "Te124",
+    "abundance": 4.74,
+    "is_most_abundant": false
+  },
+  "124.9044312": {
+    "symbol": "Te",
+    "label": "Te125",
+    "abundance": 7.07,
+    "is_most_abundant": false
+  },
+  "125.9033121": {
+    "symbol": "Te",
+    "label": "Te126",
+    "abundance": 18.84,
+    "is_most_abundant": false
+  },
+  "127.9044612": {
+    "symbol": "Te",
+    "label": "Te128",
+    "abundance": 31.740000000000002,
+    "is_most_abundant": false
+  },
+  "129.906222745": {
+    "symbol": "Te",
+    "label": "Te130",
+    "abundance": 34.08,
+    "is_most_abundant": true
+  },
+  "126.904473": {
+    "symbol": "I",
+    "label": "I127",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "127.903530753": {
+    "symbol": "Xe",
+    "label": "Xe128",
+    "abundance": 1.9099999999999995,
+    "is_most_abundant": false
+  },
+  "128.904780857": {
+    "symbol": "Xe",
+    "label": "Xe129",
+    "abundance": 26.400999999999996,
+    "is_most_abundant": false
+  },
+  "129.903509347": {
+    "symbol": "Xe",
+    "label": "Xe130",
+    "abundance": 4.071,
+    "is_most_abundant": false
+  },
+  "130.905084128": {
+    "symbol": "Xe",
+    "label": "Xe131",
+    "abundance": 21.231999999999996,
+    "is_most_abundant": false
+  },
+  "131.904155083": {
+    "symbol": "Xe",
+    "label": "Xe132",
+    "abundance": 26.908999999999992,
+    "is_most_abundant": true
+  },
+  "133.90539303": {
+    "symbol": "Xe",
+    "label": "Xe134",
+    "abundance": 10.435999999999998,
+    "is_most_abundant": false
+  },
+  "135.907214474": {
+    "symbol": "Xe",
+    "label": "Xe136",
+    "abundance": 8.856999999999998,
+    "is_most_abundant": false
+  },
+  "132.905451959": {
+    "symbol": "Cs",
+    "label": "Cs133",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "133.90450825": {
+    "symbol": "Ba",
+    "label": "Ba134",
+    "abundance": 2.42,
+    "is_most_abundant": false
+  },
+  "134.90568845": {
+    "symbol": "Ba",
+    "label": "Ba135",
+    "abundance": 6.59,
+    "is_most_abundant": false
+  },
+  "135.9045758": {
+    "symbol": "Ba",
+    "label": "Ba136",
+    "abundance": 7.85,
+    "is_most_abundant": false
+  },
+  "136.90582721": {
+    "symbol": "Ba",
+    "label": "Ba137",
+    "abundance": 11.23,
+    "is_most_abundant": false
+  },
+  "137.90524706": {
+    "symbol": "Ba",
+    "label": "Ba138",
+    "abundance": 71.7,
+    "is_most_abundant": true
+  },
+  "138.9063629": {
+    "symbol": "La",
+    "label": "La139",
+    "abundance": 99.91119,
+    "is_most_abundant": true
+  },
+  "139.9054484": {
+    "symbol": "Ce",
+    "label": "Ce140",
+    "abundance": 88.44999999999999,
+    "is_most_abundant": true
+  },
+  "141.9092502": {
+    "symbol": "Ce",
+    "label": "Ce142",
+    "abundance": 11.114,
+    "is_most_abundant": false
+  },
+  "140.9076596": {
+    "symbol": "Pr",
+    "label": "Pr141",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "141.9077288": {
+    "symbol": "Nd",
+    "label": "Nd142",
+    "abundance": 27.152,
+    "is_most_abundant": true
+  },
+  "142.9098198": {
+    "symbol": "Nd",
+    "label": "Nd143",
+    "abundance": 12.174000000000001,
+    "is_most_abundant": false
+  },
+  "143.9100928": {
+    "symbol": "Nd",
+    "label": "Nd144",
+    "abundance": 23.798000000000002,
+    "is_most_abundant": false
+  },
+  "144.9125792": {
+    "symbol": "Nd",
+    "label": "Nd145",
+    "abundance": 8.293000000000003,
+    "is_most_abundant": false
+  },
+  "145.9131225": {
+    "symbol": "Nd",
+    "label": "Nd146",
+    "abundance": 17.189000000000004,
+    "is_most_abundant": false
+  },
+  "147.916899": {
+    "symbol": "Nd",
+    "label": "Nd148",
+    "abundance": 5.756000000000001,
+    "is_most_abundant": false
+  },
+  "149.9209013": {
+    "symbol": "Nd",
+    "label": "Nd150",
+    "abundance": 5.638000000000001,
+    "is_most_abundant": false
+  },
+  "143.9120063": {
+    "symbol": "Sm",
+    "label": "Sm144",
+    "abundance": 3.08,
+    "is_most_abundant": false
+  },
+  "146.9149044": {
+    "symbol": "Sm",
+    "label": "Sm147",
+    "abundance": 15.0,
+    "is_most_abundant": false
+  },
+  "147.9148292": {
+    "symbol": "Sm",
+    "label": "Sm148",
+    "abundance": 11.25,
+    "is_most_abundant": false
+  },
+  "148.9171912": {
+    "symbol": "Sm",
+    "label": "Sm149",
+    "abundance": 13.819999999999999,
+    "is_most_abundant": false
+  },
+  "149.917282": {
+    "symbol": "Sm",
+    "label": "Sm150",
+    "abundance": 7.37,
+    "is_most_abundant": false
+  },
+  "151.9197386": {
+    "symbol": "Sm",
+    "label": "Sm152",
+    "abundance": 26.740000000000002,
+    "is_most_abundant": true
+  },
+  "153.9222158": {
+    "symbol": "Sm",
+    "label": "Sm154",
+    "abundance": 22.74,
+    "is_most_abundant": false
+  },
+  "150.9198566": {
+    "symbol": "Eu",
+    "label": "Eu151",
+    "abundance": 47.81,
+    "is_most_abundant": false
+  },
+  "152.9212368": {
+    "symbol": "Eu",
+    "label": "Eu153",
+    "abundance": 52.190000000000005,
+    "is_most_abundant": true
+  },
+  "153.920873": {
+    "symbol": "Gd",
+    "label": "Gd154",
+    "abundance": 2.18,
+    "is_most_abundant": false
+  },
+  "154.9226294": {
+    "symbol": "Gd",
+    "label": "Gd155",
+    "abundance": 14.799999999999999,
+    "is_most_abundant": false
+  },
+  "155.9221301": {
+    "symbol": "Gd",
+    "label": "Gd156",
+    "abundance": 20.47,
+    "is_most_abundant": false
+  },
+  "156.9239674": {
+    "symbol": "Gd",
+    "label": "Gd157",
+    "abundance": 15.65,
+    "is_most_abundant": false
+  },
+  "157.9241112": {
+    "symbol": "Gd",
+    "label": "Gd158",
+    "abundance": 24.84,
+    "is_most_abundant": true
+  },
+  "159.9270612": {
+    "symbol": "Gd",
+    "label": "Gd160",
+    "abundance": 21.86,
+    "is_most_abundant": false
+  },
+  "158.9253537": {
+    "symbol": "Tb",
+    "label": "Tb159",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "159.9252036": {
+    "symbol": "Dy",
+    "label": "Dy160",
+    "abundance": 2.329,
+    "is_most_abundant": false
+  },
+  "160.9269394": {
+    "symbol": "Dy",
+    "label": "Dy161",
+    "abundance": 18.889,
+    "is_most_abundant": false
+  },
+  "161.9268045": {
+    "symbol": "Dy",
+    "label": "Dy162",
+    "abundance": 25.474999999999998,
+    "is_most_abundant": false
+  },
+  "162.9287372": {
+    "symbol": "Dy",
+    "label": "Dy163",
+    "abundance": 24.895999999999997,
+    "is_most_abundant": false
+  },
+  "163.9291808": {
+    "symbol": "Dy",
+    "label": "Dy164",
+    "abundance": 28.26,
+    "is_most_abundant": true
+  },
+  "164.9303291": {
+    "symbol": "Ho",
+    "label": "Ho165",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "163.9292077": {
+    "symbol": "Er",
+    "label": "Er164",
+    "abundance": 1.601,
+    "is_most_abundant": false
+  },
+  "165.9303011": {
+    "symbol": "Er",
+    "label": "Er166",
+    "abundance": 33.503,
+    "is_most_abundant": true
+  },
+  "166.9320562": {
+    "symbol": "Er",
+    "label": "Er167",
+    "abundance": 22.869,
+    "is_most_abundant": false
+  },
+  "167.93237828": {
+    "symbol": "Er",
+    "label": "Er168",
+    "abundance": 26.978,
+    "is_most_abundant": false
+  },
+  "169.9354719": {
+    "symbol": "Er",
+    "label": "Er170",
+    "abundance": 14.91,
+    "is_most_abundant": false
+  },
+  "168.934219": {
+    "symbol": "Tm",
+    "label": "Tm169",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "169.934767243": {
+    "symbol": "Yb",
+    "label": "Yb170",
+    "abundance": 3.023,
+    "is_most_abundant": false
+  },
+  "170.936331515": {
+    "symbol": "Yb",
+    "label": "Yb171",
+    "abundance": 14.216000000000001,
+    "is_most_abundant": false
+  },
+  "171.936386654": {
+    "symbol": "Yb",
+    "label": "Yb172",
+    "abundance": 21.754,
+    "is_most_abundant": false
+  },
+  "172.938216212": {
+    "symbol": "Yb",
+    "label": "Yb173",
+    "abundance": 16.098000000000003,
+    "is_most_abundant": false
+  },
+  "173.938867546": {
+    "symbol": "Yb",
+    "label": "Yb174",
+    "abundance": 31.896,
+    "is_most_abundant": true
+  },
+  "175.942574706": {
+    "symbol": "Yb",
+    "label": "Yb176",
+    "abundance": 12.887,
+    "is_most_abundant": false
+  },
+  "174.9407772": {
+    "symbol": "Lu",
+    "label": "Lu175",
+    "abundance": 97.40100000000001,
+    "is_most_abundant": true
+  },
+  "175.9426917": {
+    "symbol": "Lu",
+    "label": "Lu176",
+    "abundance": 2.5989999999999998,
+    "is_most_abundant": false
+  },
+  "175.9414098": {
+    "symbol": "Hf",
+    "label": "Hf176",
+    "abundance": 5.239423663397027,
+    "is_most_abundant": false
+  },
+  "176.9432302": {
+    "symbol": "Hf",
+    "label": "Hf177",
+    "abundance": 18.57795642479327,
+    "is_most_abundant": false
+  },
+  "177.9437083": {
+    "symbol": "Hf",
+    "label": "Hf178",
+    "abundance": 27.27699953005169,
+    "is_most_abundant": false
+  },
+  "178.9458257": {
+    "symbol": "Hf",
+    "label": "Hf179",
+    "abundance": 13.628500864904861,
+    "is_most_abundant": false
+  },
+  "179.9465595": {
+    "symbol": "Hf",
+    "label": "Hf180",
+    "abundance": 35.116137224905266,
+    "is_most_abundant": true
+  },
+  "180.9479985": {
+    "symbol": "Ta",
+    "label": "Ta181",
+    "abundance": 99.98823999999999,
+    "is_most_abundant": true
+  },
+  "181.9482056": {
+    "symbol": "W",
+    "label": "W182",
+    "abundance": 26.5,
+    "is_most_abundant": false
+  },
+  "182.9502244": {
+    "symbol": "W",
+    "label": "W183",
+    "abundance": 14.31,
+    "is_most_abundant": false
+  },
+  "183.9509332": {
+    "symbol": "W",
+    "label": "W184",
+    "abundance": 30.64,
+    "is_most_abundant": true
+  },
+  "185.9543651": {
+    "symbol": "W",
+    "label": "W186",
+    "abundance": 28.43,
+    "is_most_abundant": false
+  },
+  "184.9529583": {
+    "symbol": "Re",
+    "label": "Re185",
+    "abundance": 37.4,
+    "is_most_abundant": false
+  },
+  "186.9557522": {
+    "symbol": "Re",
+    "label": "Re187",
+    "abundance": 62.6,
+    "is_most_abundant": true
+  },
+  "185.9538376": {
+    "symbol": "Os",
+    "label": "Os186",
+    "abundance": 1.59,
+    "is_most_abundant": false
+  },
+  "186.9557496": {
+    "symbol": "Os",
+    "label": "Os187",
+    "abundance": 1.96,
+    "is_most_abundant": false
+  },
+  "187.9558373": {
+    "symbol": "Os",
+    "label": "Os188",
+    "abundance": 13.239999999999998,
+    "is_most_abundant": false
+  },
+  "188.9581459": {
+    "symbol": "Os",
+    "label": "Os189",
+    "abundance": 16.150000000000002,
+    "is_most_abundant": false
+  },
+  "189.9584454": {
+    "symbol": "Os",
+    "label": "Os190",
+    "abundance": 26.26,
+    "is_most_abundant": false
+  },
+  "191.9614788": {
+    "symbol": "Os",
+    "label": "Os192",
+    "abundance": 40.78,
+    "is_most_abundant": true
+  },
+  "190.9605915": {
+    "symbol": "Ir",
+    "label": "Ir191",
+    "abundance": 37.230000000000004,
+    "is_most_abundant": false
+  },
+  "192.9629238": {
+    "symbol": "Ir",
+    "label": "Ir193",
+    "abundance": 62.77,
+    "is_most_abundant": true
+  },
+  "193.9626835": {
+    "symbol": "Pt",
+    "label": "Pt194",
+    "abundance": 32.864000000000004,
+    "is_most_abundant": false
+  },
+  "194.9647943": {
+    "symbol": "Pt",
+    "label": "Pt195",
+    "abundance": 33.775000000000006,
+    "is_most_abundant": true
+  },
+  "195.9649546": {
+    "symbol": "Pt",
+    "label": "Pt196",
+    "abundance": 25.211000000000002,
+    "is_most_abundant": false
+  },
+  "197.9678967": {
+    "symbol": "Pt",
+    "label": "Pt198",
+    "abundance": 7.356000000000001,
+    "is_most_abundant": false
+  },
+  "196.9665701": {
+    "symbol": "Au",
+    "label": "Au197",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "197.9667692": {
+    "symbol": "Hg",
+    "label": "Hg198",
+    "abundance": 10.040000000000001,
+    "is_most_abundant": false
+  },
+  "198.968281": {
+    "symbol": "Hg",
+    "label": "Hg199",
+    "abundance": 16.939999999999998,
+    "is_most_abundant": false
+  },
+  "199.9683269": {
+    "symbol": "Hg",
+    "label": "Hg200",
+    "abundance": 23.14,
+    "is_most_abundant": false
+  },
+  "200.9703031": {
+    "symbol": "Hg",
+    "label": "Hg201",
+    "abundance": 13.170000000000002,
+    "is_most_abundant": false
+  },
+  "201.9706436": {
+    "symbol": "Hg",
+    "label": "Hg202",
+    "abundance": 29.74,
+    "is_most_abundant": true
+  },
+  "203.973494": {
+    "symbol": "Hg",
+    "label": "Hg204",
+    "abundance": 6.819999999999999,
+    "is_most_abundant": false
+  },
+  "202.9723441": {
+    "symbol": "Tl",
+    "label": "Tl203",
+    "abundance": 29.515,
+    "is_most_abundant": false
+  },
+  "204.9744273": {
+    "symbol": "Tl",
+    "label": "Tl205",
+    "abundance": 70.485,
+    "is_most_abundant": true
+  },
+  "203.9730435": {
+    "symbol": "Pb",
+    "label": "Pb204",
+    "abundance": 1.4000000000000001,
+    "is_most_abundant": false
+  },
+  "205.9744652": {
+    "symbol": "Pb",
+    "label": "Pb206",
+    "abundance": 24.099999999999998,
+    "is_most_abundant": false
+  },
+  "206.9758968": {
+    "symbol": "Pb",
+    "label": "Pb207",
+    "abundance": 22.1,
+    "is_most_abundant": false
+  },
+  "207.976652": {
+    "symbol": "Pb",
+    "label": "Pb208",
+    "abundance": 52.400000000000006,
+    "is_most_abundant": true
+  },
+  "208.9803986": {
+    "symbol": "Bi",
+    "label": "Bi209",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  },
+  "232.0380536": {
+    "symbol": "Th",
+    "label": "Th232",
+    "abundance": 99.98,
+    "is_most_abundant": true
+  },
+  "231.0358825": {
+    "symbol": "Pa",
+    "label": "Pa231",
+    "abundance": 100.0,
+    "is_most_abundant": true
+  }
+}

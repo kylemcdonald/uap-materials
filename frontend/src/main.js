@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as d3 from 'd3';
+import KNN from 'ml-knn';
 
 let scene, camera, renderer, controls, points;
 const dropZone = document.getElementById('dropZone');
@@ -748,6 +749,12 @@ function createThresholdSlider() {
     minLabel.style.marginBottom = '5px';
     controlsDiv.appendChild(minLabel);
 
+    // Create min slider container
+    const minContainer = document.createElement('div');
+    minContainer.style.display = 'flex';
+    minContainer.style.alignItems = 'center';
+    controlsDiv.appendChild(minContainer);
+
     // Create min slider
     const minSlider = document.createElement('input');
     minSlider.type = 'range';
@@ -756,13 +763,17 @@ function createThresholdSlider() {
     minSlider.value = '0';
     minSlider.step = '1';
     minSlider.style.width = '200px';
-    controlsDiv.appendChild(minSlider);
+    minContainer.appendChild(minSlider);
 
-    // Create min value display
-    const minValueDisplay = document.createElement('span');
-    minValueDisplay.textContent = '0';
-    minValueDisplay.style.marginLeft = '10px';
-    controlsDiv.appendChild(minValueDisplay);
+    // Create min number input
+    const minInput = document.createElement('input');
+    minInput.type = 'number';
+    minInput.min = '0';
+    minInput.max = '200';
+    minInput.value = '0';
+    minInput.style.width = '60px';
+    minInput.style.marginLeft = '10px';
+    minContainer.appendChild(minInput);
 
     // Create range label
     const rangeLabel = document.createElement('label');
@@ -772,6 +783,12 @@ function createThresholdSlider() {
     rangeLabel.style.marginBottom = '5px';
     controlsDiv.appendChild(rangeLabel);
 
+    // Create range slider container
+    const rangeContainer = document.createElement('div');
+    rangeContainer.style.display = 'flex';
+    rangeContainer.style.alignItems = 'center';
+    controlsDiv.appendChild(rangeContainer);
+
     // Create range slider
     const rangeSlider = document.createElement('input');
     rangeSlider.type = 'range';
@@ -780,13 +797,17 @@ function createThresholdSlider() {
     rangeSlider.value = '200';
     rangeSlider.step = '1';
     rangeSlider.style.width = '200px';
-    controlsDiv.appendChild(rangeSlider);
+    rangeContainer.appendChild(rangeSlider);
 
-    // Create range value display
-    const rangeValueDisplay = document.createElement('span');
-    rangeValueDisplay.textContent = '200';
-    rangeValueDisplay.style.marginLeft = '10px';
-    controlsDiv.appendChild(rangeValueDisplay);
+    // Create range number input
+    const rangeInput = document.createElement('input');
+    rangeInput.type = 'number';
+    rangeInput.min = '0';
+    rangeInput.max = '200';
+    rangeInput.value = '200';
+    rangeInput.style.width = '60px';
+    rangeInput.style.marginLeft = '10px';
+    rangeContainer.appendChild(rangeInput);
 
     // Create rotation speed label
     const rotationLabel = document.createElement('label');
@@ -796,6 +817,12 @@ function createThresholdSlider() {
     rotationLabel.style.marginBottom = '5px';
     controlsDiv.appendChild(rotationLabel);
 
+    // Create rotation speed slider container
+    const rotationContainer = document.createElement('div');
+    rotationContainer.style.display = 'flex';
+    rotationContainer.style.alignItems = 'center';
+    controlsDiv.appendChild(rotationContainer);
+
     // Create rotation speed slider
     const rotationSlider = document.createElement('input');
     rotationSlider.type = 'range';
@@ -804,20 +831,32 @@ function createThresholdSlider() {
     rotationSlider.value = '0.1';
     rotationSlider.step = '0.01';
     rotationSlider.style.width = '200px';
-    controlsDiv.appendChild(rotationSlider);
+    rotationContainer.appendChild(rotationSlider);
 
-    // Create rotation speed value display
-    const rotationValueDisplay = document.createElement('span');
-    rotationValueDisplay.textContent = '0.1';
-    rotationValueDisplay.style.marginLeft = '10px';
-    controlsDiv.appendChild(rotationValueDisplay);
+    // Create rotation speed number input
+    const rotationInput = document.createElement('input');
+    rotationInput.type = 'number';
+    rotationInput.min = '0';
+    rotationInput.max = '1';
+    rotationInput.value = '0.1';
+    rotationInput.step = '0.01';
+    rotationInput.style.width = '60px';
+    rotationInput.style.marginLeft = '10px';
+    rotationContainer.appendChild(rotationInput);
 
     // Create min index label
     const minIndexLabel = document.createElement('label');
     minIndexLabel.textContent = 'Min Index: ';
     minIndexLabel.style.display = 'block';
+    minIndexLabel.style.marginTop = '10px';
     minIndexLabel.style.marginBottom = '5px';
     controlsDiv.appendChild(minIndexLabel);
+
+    // Create min index slider container
+    const minIndexContainer = document.createElement('div');
+    minIndexContainer.style.display = 'flex';
+    minIndexContainer.style.alignItems = 'center';
+    controlsDiv.appendChild(minIndexContainer);
 
     // Create min index slider
     const minIndexSlider = document.createElement('input');
@@ -827,13 +866,18 @@ function createThresholdSlider() {
     minIndexSlider.value = '0';
     minIndexSlider.step = '1000';
     minIndexSlider.style.width = '200px';
-    controlsDiv.appendChild(minIndexSlider);
+    minIndexContainer.appendChild(minIndexSlider);
 
-    // Create min index value display
-    const minIndexValueDisplay = document.createElement('span');
-    minIndexValueDisplay.textContent = '0';
-    minIndexValueDisplay.style.marginLeft = '10px';
-    controlsDiv.appendChild(minIndexValueDisplay);
+    // Create min index number input
+    const minIndexInput = document.createElement('input');
+    minIndexInput.type = 'number';
+    minIndexInput.min = '0';
+    minIndexInput.max = '1000000';
+    minIndexInput.value = '0';
+    minIndexInput.step = '1000';
+    minIndexInput.style.width = '60px';
+    minIndexInput.style.marginLeft = '10px';
+    minIndexContainer.appendChild(minIndexInput);
 
     // Create index range label
     const indexRangeLabel = document.createElement('label');
@@ -843,6 +887,12 @@ function createThresholdSlider() {
     indexRangeLabel.style.marginBottom = '5px';
     controlsDiv.appendChild(indexRangeLabel);
 
+    // Create index range slider container
+    const indexRangeContainer = document.createElement('div');
+    indexRangeContainer.style.display = 'flex';
+    indexRangeContainer.style.alignItems = 'center';
+    controlsDiv.appendChild(indexRangeContainer);
+
     // Create index range slider
     const indexRangeSlider = document.createElement('input');
     indexRangeSlider.type = 'range';
@@ -851,24 +901,29 @@ function createThresholdSlider() {
     indexRangeSlider.value = '1000000';
     indexRangeSlider.step = '1000';
     indexRangeSlider.style.width = '200px';
-    controlsDiv.appendChild(indexRangeSlider);
+    indexRangeContainer.appendChild(indexRangeSlider);
 
-    // Create index range value display
-    const indexRangeValueDisplay = document.createElement('span');
-    indexRangeValueDisplay.textContent = '1000000';
-    indexRangeValueDisplay.style.marginLeft = '10px';
-    controlsDiv.appendChild(indexRangeValueDisplay);
+    // Create index range number input
+    const indexRangeInput = document.createElement('input');
+    indexRangeInput.type = 'number';
+    indexRangeInput.min = '1000';
+    indexRangeInput.max = '1000000';
+    indexRangeInput.value = '1000000';
+    indexRangeInput.step = '1000';
+    indexRangeInput.style.width = '60px';
+    indexRangeInput.style.marginLeft = '10px';
+    indexRangeContainer.appendChild(indexRangeInput);
 
-    // Add event listeners
+    // Add event listeners for min threshold
     minSlider.addEventListener('input', function() {
         const minValue = parseFloat(this.value);
+        minInput.value = minValue;
         const rangeValue = parseFloat(rangeSlider.value);
-        minValueDisplay.textContent = minValue;
         
         // Ensure min + range doesn't exceed 200
         if (minValue + rangeValue > 200) {
             rangeSlider.value = 200 - minValue;
-            rangeValueDisplay.textContent = 200 - minValue;
+            rangeInput.value = 200 - minValue;
         }
         
         // Update the threshold uniforms if points exist
@@ -881,15 +936,39 @@ function createThresholdSlider() {
         updateHistogramHighlight();
     });
 
+    minInput.addEventListener('input', function() {
+        const minValue = parseFloat(this.value);
+        if (minValue >= 0 && minValue <= 200) {
+            minSlider.value = minValue;
+            const rangeValue = parseFloat(rangeSlider.value);
+            
+            // Ensure min + range doesn't exceed 200
+            if (minValue + rangeValue > 200) {
+                rangeSlider.value = 200 - minValue;
+                rangeInput.value = 200 - minValue;
+            }
+            
+            // Update the threshold uniforms if points exist
+            if (points && points.material.uniforms) {
+                points.material.uniforms.minThreshold.value = minValue;
+                points.material.uniforms.maxThreshold.value = minValue + parseFloat(rangeSlider.value);
+            }
+            
+            // Update histogram highlight
+            updateHistogramHighlight();
+        }
+    });
+
+    // Add event listeners for range
     rangeSlider.addEventListener('input', function() {
         const rangeValue = parseFloat(this.value);
+        rangeInput.value = rangeValue;
         const minValue = parseFloat(minSlider.value);
-        rangeValueDisplay.textContent = rangeValue;
         
         // Ensure min + range doesn't exceed 200
         if (minValue + rangeValue > 200) {
             minSlider.value = 200 - rangeValue;
-            minValueDisplay.textContent = 200 - rangeValue;
+            minInput.value = 200 - rangeValue;
         }
         
         // Update the threshold uniforms if points exist
@@ -902,22 +981,54 @@ function createThresholdSlider() {
         updateHistogramHighlight();
     });
 
-    // Add rotation speed event listener
-    rotationSlider.addEventListener('input', function() {
-        rotationSpeed = parseFloat(this.value);
-        rotationValueDisplay.textContent = rotationSpeed.toFixed(1);
+    rangeInput.addEventListener('input', function() {
+        const rangeValue = parseFloat(this.value);
+        if (rangeValue >= 0 && rangeValue <= 200) {
+            rangeSlider.value = rangeValue;
+            const minValue = parseFloat(minSlider.value);
+            
+            // Ensure min + range doesn't exceed 200
+            if (minValue + rangeValue > 200) {
+                minSlider.value = 200 - rangeValue;
+                minInput.value = 200 - rangeValue;
+            }
+            
+            // Update the threshold uniforms if points exist
+            if (points && points.material.uniforms) {
+                points.material.uniforms.minThreshold.value = parseFloat(minSlider.value);
+                points.material.uniforms.maxThreshold.value = parseFloat(minSlider.value) + rangeValue;
+            }
+            
+            // Update histogram highlight
+            updateHistogramHighlight();
+        }
     });
 
-    // Add index control event listeners
+    // Add event listeners for rotation speed
+    rotationSlider.addEventListener('input', function() {
+        const rotationValue = parseFloat(this.value);
+        rotationInput.value = rotationValue;
+        rotationSpeed = rotationValue;
+    });
+
+    rotationInput.addEventListener('input', function() {
+        const rotationValue = parseFloat(this.value);
+        if (rotationValue >= 0 && rotationValue <= 1) {
+            rotationSlider.value = rotationValue;
+            rotationSpeed = rotationValue;
+        }
+    });
+
+    // Add event listeners for min index
     minIndexSlider.addEventListener('input', function() {
         const newMinIndex = parseInt(this.value);
+        minIndexInput.value = newMinIndex;
         const currentRange = parseInt(indexRangeSlider.value);
-        minIndexValueDisplay.textContent = newMinIndex.toLocaleString();
         
         // Ensure min + range doesn't exceed total points
         if (newMinIndex + currentRange > totalPoints) {
             indexRangeSlider.value = totalPoints - newMinIndex;
-            indexRangeValueDisplay.textContent = (totalPoints - newMinIndex).toLocaleString();
+            indexRangeInput.value = totalPoints - newMinIndex;
         }
         
         minIndex = newMinIndex;
@@ -929,15 +1040,38 @@ function createThresholdSlider() {
         }
     });
 
+    minIndexInput.addEventListener('input', function() {
+        const newMinIndex = parseInt(this.value);
+        if (newMinIndex >= 0 && newMinIndex <= totalPoints) {
+            minIndexSlider.value = newMinIndex;
+            const currentRange = parseInt(indexRangeSlider.value);
+            
+            // Ensure min + range doesn't exceed total points
+            if (newMinIndex + currentRange > totalPoints) {
+                indexRangeSlider.value = totalPoints - newMinIndex;
+                indexRangeInput.value = totalPoints - newMinIndex;
+            }
+            
+            minIndex = newMinIndex;
+            indexRange = parseInt(indexRangeSlider.value);
+            
+            // Update the point cloud if it exists
+            if (points) {
+                updatePointCloudIndexRange();
+            }
+        }
+    });
+
+    // Add event listeners for index range
     indexRangeSlider.addEventListener('input', function() {
         const newRange = parseInt(this.value);
+        indexRangeInput.value = newRange;
         const currentMin = parseInt(minIndexSlider.value);
-        indexRangeValueDisplay.textContent = newRange.toLocaleString();
         
         // Ensure min + range doesn't exceed total points
         if (currentMin + newRange > totalPoints) {
             minIndexSlider.value = totalPoints - newRange;
-            minIndexValueDisplay.textContent = (totalPoints - newRange).toLocaleString();
+            minIndexInput.value = totalPoints - newRange;
         }
         
         minIndex = parseInt(minIndexSlider.value);
@@ -948,25 +1082,49 @@ function createThresholdSlider() {
             updatePointCloudIndexRange();
         }
     });
+
+    indexRangeInput.addEventListener('input', function() {
+        const newRange = parseInt(this.value);
+        if (newRange >= 1000 && newRange <= totalPoints) {
+            indexRangeSlider.value = newRange;
+            const currentMin = parseInt(minIndexSlider.value);
+            
+            // Ensure min + range doesn't exceed total points
+            if (currentMin + newRange > totalPoints) {
+                minIndexSlider.value = totalPoints - newRange;
+                minIndexInput.value = totalPoints - newRange;
+            }
+            
+            minIndex = parseInt(minIndexSlider.value);
+            indexRange = newRange;
+            
+            // Update the point cloud if it exists
+            if (points) {
+                updatePointCloudIndexRange();
+            }
+        }
+    });
     
     // Function to update slider max values based on total points
     function updateSliderMaxValues() {
         // Update min index slider max
         minIndexSlider.max = totalPoints.toString();
+        minIndexInput.max = totalPoints.toString();
         
         // Update index range slider max
         const maxRange = totalPoints;
         indexRangeSlider.max = maxRange.toString();
+        indexRangeInput.max = maxRange.toString();
         
         // Set index range to maximum value by default
         indexRangeSlider.value = maxRange.toString();
-        indexRangeValueDisplay.textContent = maxRange.toLocaleString();
+        indexRangeInput.value = maxRange.toString();
         indexRange = maxRange;
         
         // If current values exceed new max, adjust them
         if (parseInt(minIndexSlider.value) > totalPoints) {
             minIndexSlider.value = '0';
-            minIndexValueDisplay.textContent = '0';
+            minIndexInput.value = '0';
             minIndex = 0;
         }
         
